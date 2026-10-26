@@ -1,0 +1,3401 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Териберка · Координатная карта</title>
+
+    <style>
+      :root {
+        --navy: #082e50;
+        --deep: #052743;
+        --ink: #0b3454;
+        --soft: #eff8fc;
+        --line: #c5dce9;
+        --pale: #c1d3df;
+        --red: #d65c48;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        color: var(--ink);
+        font-family: Inter, 'Helvetica Neue', Arial, sans-serif;
+        background: #edf6fb;
+      }
+      #map {
+        position: absolute;
+        inset: 0;
+      }
+      .frame {
+        position: fixed;
+        inset: 14px;
+        border: 1px solid rgba(3, 37, 70, 0.34);
+        border-radius: 22px;
+        pointer-events: none;
+        z-index: 3;
+      }
+      .sidebar {
+        position: absolute;
+        top: 26px;
+        left: 26px;
+        bottom: 26px;
+        width: 354px;
+        z-index: 6;
+        background: rgba(245, 251, 254, 0.95);
+        box-shadow: 0 12px 45px rgba(5, 33, 58, 0.17);
+        border: 1px solid rgba(8, 46, 80, 0.12);
+        border-radius: 16px;
+        overflow: auto;
+        padding: 28px 23px 22px;
+        backdrop-filter: blur(12px);
+      }
+      .eyebrow {
+        letter-spacing: 0.22em;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64859c;
+      }
+      h1 {
+        font-size: 32px;
+        letter-spacing: -0.05em;
+        line-height: 1.05;
+        margin: 12px 0 6px;
+        font-weight: 800;
+      }
+      .sub {
+        font-size: 12px;
+        color: #6d899d;
+        line-height: 1.4;
+        margin: 0 0 20px;
+      }
+      .divide {
+        width: 100%;
+        height: 1px;
+        background: #c5dce9;
+        margin: 22px 0 16px;
+      }
+      h2 {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin: 0 0 12px;
+      }
+      .pinrow {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        text-align: left;
+        padding: 8px 0;
+        border: none;
+        border-bottom: 1px solid rgba(8, 46, 80, 0.07);
+        background: transparent;
+        color: #082e50;
+        cursor: pointer;
+        gap: 10px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+      .pinrow:hover {
+        color: #c65846;
+      }
+      .num {
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        flex: 0 0 27px;
+        width: 27px;
+        height: 27px;
+        border: 1.5px solid var(--ink);
+        background: var(--navy);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .num.extra {
+        background: white;
+        color: var(--navy);
+        border-color: #7f9fb4;
+      }
+      .labelgrey {
+        font-size: 10px;
+        font-weight: 400;
+        color: #7693a6;
+        display: block;
+        margin-top: 3px;
+      }
+      .legend {
+        font-size: 11px;
+        line-height: 1.55;
+        color: #507186;
+      }
+      .legend p {
+        margin: 6px 0;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--navy);
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+      .dot.secondary {
+        background: transparent;
+        border: 1.5px solid var(--navy);
+      }
+      .btn {
+        font-family: inherit;
+        width: 100%;
+        font-size: 11px;
+        cursor: pointer;
+        border-radius: 7px;
+        text-align: center;
+        line-height: 1.3;
+        padding: 11px 10px;
+        margin-top: 9px;
+      }
+      .btn.primary {
+        border: 1px solid var(--navy);
+        background: var(--navy);
+        color: white;
+      }
+      .btn.secondary {
+        border: 1px solid #a7c1d2;
+        color: var(--navy);
+        background: white;
+      }
+      .rightblock {
+        position: absolute;
+        right: 33px;
+        top: 33px;
+        z-index: 5;
+        pointer-events: none;
+        text-align: right;
+        color: var(--navy);
+      }
+      .overline {
+        font-size: 10px;
+        letter-spacing: 0.28em;
+        font-weight: 800;
+      }
+      .rightblock .title {
+        margin-top: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+      }
+      .north {
+        position: absolute;
+        right: 35px;
+        bottom: 66px;
+        z-index: 5;
+        color: var(--navy);
+        text-align: center;
+        pointer-events: none;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .north .arrow {
+        display: block;
+        font-size: 34px;
+        line-height: 1;
+      }
+      .status {
+        position: absolute;
+        z-index: 5;
+        bottom: 32px;
+        right: 92px;
+        background: rgba(246, 251, 254, 0.95);
+        border: 1px solid #c6dce9;
+        border-radius: 7px;
+        padding: 7px 10px;
+        font-size: 10px;
+        color: #446981;
+        pointer-events: none;
+        max-width: 350px;
+      }
+      .maplibregl-ctrl-bottom-left {
+        margin-left: 400px !important;
+        margin-bottom: 20px !important;
+      }
+      .maplibregl-ctrl-bottom-right {
+        margin: 0 16px 4px 0 !important;
+      }
+      .maplibregl-ctrl-attrib {
+        font-size: 9px !important;
+      }
+      .maplibregl-popup-content {
+        border-radius: 9px;
+        padding: 16px 16px 13px;
+        max-width: 280px;
+        font-family: inherit;
+        box-shadow: 0 8px 26px #163d6245;
+      }
+      .poptitle {
+        font-weight: 800;
+        font-size: 15px;
+        margin: 0 0 7px;
+        color: #082e50;
+      }
+      .popbody {
+        font-size: 12px;
+        line-height: 1.5;
+        color: #355a74;
+      }
+      .popmeta {
+        font-size: 10px;
+        color: #6f8799;
+        margin-top: 8px;
+        border-top: 1px solid #dfeaf0;
+        padding-top: 8px;
+      }
+      .poplink {
+        display: block;
+        color: #145a84;
+        text-decoration: underline;
+        margin-top: 7px;
+      }
+      .info {
+        font-size: 10.5px;
+        line-height: 1.5;
+        color: #617f93;
+        margin-top: 14px;
+      }
+      #error {
+        display: none;
+        position: absolute;
+        left: 400px;
+        top: 25px;
+        z-index: 8;
+        max-width: 540px;
+        background: #fff4e9;
+        color: #804b2d;
+        border: 1px solid #edcaab;
+        border-radius: 9px;
+        padding: 13px;
+        font-size: 12px;
+      }
+      @media (max-width: 760px) {
+        .sidebar {
+          width: calc(100% - 32px);
+          left: 16px;
+          top: auto;
+          bottom: 16px;
+          height: 215px;
+          padding: 14px 18px;
+        }
+        .sidebar h1 {
+          font-size: 25px;
+        }
+        .sidebar .pinrow {
+          font-size: 11px;
+        }
+        .rightblock {
+          right: 20px;
+          top: 26px;
+        }
+        .maplibregl-ctrl-bottom-left {
+          margin-left: 12px !important;
+          margin-bottom: 248px !important;
+        }
+        .north {
+          bottom: 255px;
+          right: 22px;
+        }
+        .status {
+          display: none;
+        }
+      }
+      @media print {
+        .sidebar {
+          box-shadow: none;
+          background: rgba(248, 252, 255, 0.96);
+        }
+        .btn {
+          display: none;
+        }
+        .frame {
+          border-radius: 0;
+        }
+        .rightblock {
+          top: 26px;
+        }
+        .maplibregl-ctrl-attrib {
+          display: block;
+        }
+      }
+    </style>
+    <style>
+      .park-status {
+        font-size: 11px;
+        line-height: 1.45;
+        border-radius: 7px;
+        padding: 10px;
+        margin: 10px 0;
+        color: #1f6040;
+      }
+      .park-warn {
+        background: #fff3da;
+        border: 1px solid #f0d19b;
+        color: #75541d;
+      }
+      .park-ready {
+        background: #e1f4e8;
+        border: 1px solid #acd2b8;
+        color: #21623e;
+      }
+      .swatchpark {
+        display: inline-block;
+        width: 13px;
+        height: 11px;
+        background: #67bd83;
+        border: 2px solid #27844b;
+        vertical-align: -1px;
+        margin-right: 7px;
+        opacity: 0.75;
+      }
+      .source-button {
+        display: block;
+        border: 1px solid #9cbdca;
+        border-radius: 7px;
+        font-size: 11px;
+        text-align: center;
+        padding: 10px;
+        color: #164b63;
+        cursor: pointer;
+        background: #fff;
+        margin-top: 8px;
+      }
+    </style>
+    <style>
+      /* Festival planning overlay — proposed footprints and routes are not official site plans. */
+      :root {
+        --festival: #b65d79;
+        --amber: #bd8544;
+        --hill: #557d8c;
+      }
+      .section-kicker {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #66889c;
+        margin: 12px 0 6px;
+      }
+      .zone-list {
+        margin: 6px 0 4px;
+      }
+      .zone-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid #dce9ee;
+        background: transparent;
+        padding: 9px 0;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+        color: #092f51;
+      }
+      .zone-row:hover,
+      .poi-row:hover {
+        color: #b65d79;
+      }
+      .zone-icon {
+        flex: 0 0 31px;
+        width: 31px;
+        height: 31px;
+        border-radius: 50%;
+        border: 1.8px solid var(--festival);
+        background: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 800;
+        color: #963d62;
+      }
+      .zone-row strong,
+      .poi-row strong {
+        display: block;
+        font-size: 12px;
+        line-height: 1.3;
+      }
+      .zone-row small,
+      .poi-row small {
+        display: block;
+        font-size: 10px;
+        line-height: 1.35;
+        color: #6c8aa0;
+        margin-top: 3px;
+      }
+      .mini-legend {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: #4b6f87;
+        margin: 8px 0;
+      }
+      .symbol-line {
+        width: 29px;
+        height: 0;
+        border-top: 3px dashed var(--festival);
+        display: inline-block;
+        flex: 0 0 29px;
+      }
+      .symbol-road {
+        width: 29px;
+        height: 0;
+        border-top: 5px solid #103c62;
+        box-shadow: 0 2px 0 #fff;
+        display: inline-block;
+        flex: 0 0 29px;
+      }
+      .symbol-hill {
+        display: inline-block;
+        width: 29px;
+        height: 14px;
+        background: linear-gradient(135deg, #c6d8dc, #7698a0);
+        border-radius: 10px;
+        flex: 0 0 29px;
+      }
+      .poi-row {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        padding: 10px 0;
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+        color: #092f51;
+      }
+      .poi-icon {
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        border: 2px solid var(--amber);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #98662b;
+        font-size: 17px;
+      }
+      .data-note {
+        font-size: 10.5px;
+        color: #628099;
+        line-height: 1.5;
+        margin-top: 10px;
+      }
+      .roadlength {
+        color: #092f51;
+        font-weight: 800;
+        font-size: 20px;
+        letter-spacing: -0.045em;
+        margin: 7px 0 2px;
+      }
+      .roadmeta {
+        font-size: 10px;
+        color: #7392a6;
+        line-height: 1.4;
+      }
+      .toggleline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 0 4px;
+        font-size: 11px;
+        cursor: pointer;
+        color: #244f6b;
+      }
+      .toggleline input {
+        accent-color: #9c4b6a;
+      }
+      .badge-draft {
+        font-size: 9px;
+        background: #faeaf0;
+        border: 1px solid #ecc8d5;
+        color: #874765;
+        display: inline-block;
+        border-radius: 3px;
+        padding: 2px 5px;
+        vertical-align: 1px;
+        margin-left: 5px;
+        font-weight: 800;
+      }
+      .landing-sub {
+        font-size: 11px;
+        color: #7090a4;
+        line-height: 1.35;
+      }
+      @media (max-width: 760px) {
+        .sidebar {
+          height: 260px;
+        }
+        .maplibregl-ctrl-bottom-left {
+          margin-bottom: 280px !important;
+        }
+      }
+    </style>
+
+    <style>
+      :root {
+        --eco: var(--festival);
+        --eco-dark: #8e375c;
+      }
+      .symbol-eco {
+        width: 29px;
+        height: 0;
+        border-top: 4px dashed var(--eco);
+        display: inline-block;
+        flex: 0 0 29px;
+      }
+      .eco-time {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0;
+        color: #52798a;
+      }
+      .eco-summary {
+        margin: 13px 0 9px;
+        padding: 10px 11px;
+        background: #faedf3;
+        border-left: 3px solid var(--eco);
+        border-radius: 5px;
+        display: grid;
+        grid-template-columns: 53px 1fr;
+        gap: 7px;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .eco-summary b {
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        color: #8e375c;
+      }
+      .eco-summary span {
+        color: #123f54;
+      }
+      .eco-row {
+        width: 100%;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid #dce9ee;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        text-align: left;
+        padding: 9px 0;
+        color: #103955;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .eco-row:hover strong {
+        color: var(--eco);
+      }
+      .eco-index {
+        width: 29px;
+        height: 29px;
+        border-radius: 50%;
+        background: var(--eco);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        font-weight: 800;
+        flex: 0 0 29px;
+      }
+      .eco-row strong {
+        display: block;
+        font-size: 12px;
+      }
+      .eco-row small {
+        display: block;
+        color: #7390a2;
+        font-size: 10px;
+        margin-top: 3px;
+        line-height: 1.3;
+      }
+      .eco-popup-label {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #8e375c;
+        margin-bottom: 4px;
+      }
+      .eco-popup-text {
+        margin: 9px 0 0;
+      }
+      .eco-popup-text strong {
+        color: #8e375c;
+      }
+      .eco-popup-foot {
+        font-size: 10px;
+        color: #718b9a;
+        margin-top: 12px;
+        padding-top: 9px;
+        border-top: 1px solid #dce9ee;
+      }
+    </style>
+    <style>
+      #offlineMap {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        background: #edf7fb;
+        overflow: hidden;
+        color: #0b3454;
+      }
+      #offlineDrawing,
+      #offlineDrawing svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: pan-y;
+      }
+      #offlinePopup {
+        position: absolute;
+        top: 28px;
+        right: 25px;
+        max-width: 340px;
+        width: calc(100% - 420px);
+        min-width: 240px;
+        padding: 19px 19px 17px;
+        border: 1px solid #bdcfdb;
+        background: #fff;
+        border-radius: 13px;
+        box-shadow: 0 8px 28px #12395738;
+        font:
+          12px/1.5 Arial,
+          sans-serif;
+        z-index: 5;
+        max-height: 57vh;
+        overflow: auto;
+      }
+      #offlinePopup[hidden] {
+        display: none;
+      }
+      #offlinePopup .offlineClose {
+        position: sticky;
+        top: 0;
+        float: right;
+        margin: -10px -8px 2px 8px;
+        background: #e9f3f8;
+        border: 0;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+      }
+      #offlineTools {
+        position: absolute;
+        right: 34px;
+        bottom: 115px;
+        display: grid;
+        gap: 3px;
+        background: white;
+        border: 1px solid #d2e2e8;
+        border-radius: 9px;
+        padding: 6px;
+        box-shadow: 0 2px 15px #11355235;
+        z-index: 5;
+      }
+      #offlineTools button {
+        width: 33px;
+        height: 34px;
+        border: 0;
+        background: #eef7fa;
+        color: #0b3454;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      #offlineDisclaimer {
+        position: absolute;
+        right: 95px;
+        bottom: 31px;
+        color: #416884;
+        font-size: 10px;
+        padding: 8px 11px;
+        background: #ffffffee;
+        border: 1px solid #c9dce8;
+        border-radius: 8px;
+        line-height: 1.5;
+        z-index: 3;
+      }
+      #offlineDrawing .offline-pin {
+        cursor: pointer;
+        outline: none;
+      }
+      #offlineDrawing .offline-pin:focus circle,
+      #offlineDrawing .offline-pin:hover circle {
+        stroke: #dd557b;
+        stroke-width: 3;
+      }
+      #offlineDrawing .offline-title {
+        font:
+          700 16px Arial,
+          sans-serif;
+        fill: #0b3454;
+        paint-order: stroke;
+        stroke: #edf7fb;
+        stroke-width: 4px;
+      }
+      #offlineDrawing .offline-subtitle {
+        font:
+          11px Arial,
+          sans-serif;
+        fill: #55798d;
+      }
+      #offlineDrawing .offline-pin-label {
+        font:
+          11px Arial,
+          sans-serif;
+        fill: #0a3858;
+        paint-order: stroke;
+        stroke: #f1f8fa;
+        stroke-width: 3px;
+      }
+      @media (max-width: 760px) {
+        #offlinePopup {
+          top: 10px;
+          right: 10px;
+          width: calc(100% - 20px);
+          min-width: 0;
+          max-width: none;
+          max-height: 34vh;
+        }
+        #offlineDisclaimer {
+          display: none;
+        }
+        #offlineTools {
+          right: 18px;
+          bottom: 294px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div
+      id="offlineMap"
+      role="region"
+      aria-label="Резервная координатная схема карты"
+    >
+      <div id="offlineDrawing"></div>
+      <div id="offlinePopup" hidden></div>
+      <div id="offlineTools">
+        <button
+          id="offlinePlus"
+          title="Приблизить карту"
+          aria-label="Приблизить"
+        >
+          +</button
+        ><button id="offlineMinus" title="Отдалить карту" aria-label="Отдалить">
+          −</button
+        ><button id="offlineReset" title="Показать основные объекты">⌖</button>
+      </div>
+      <div id="offlineDisclaimer">
+        Резервная координатная схема · без подложки OpenStreetMap<br />Маршрут и
+        точки сохранены; линии берегов здесь не отображаются.
+      </div>
+    </div>
+    <div class="frame"></div>
+    <div id="error">
+      Подробная картографическая подложка недоступна. Показана резервная
+      координатная схема со всеми сохранёнными точками и маршрутами. Для
+      подробной карты нужен интернет.
+    </div>
+    <div class="sidebar">
+      <div class="eyebrow">Координатная схема · WGS 84</div>
+      <h1>ТЕРИБЕРКА</h1>
+      <p class="sub">
+        Старая Териберка · Лодейное<br />Мурманская область, Баренцево море
+      </p>
+
+      <h2>01 / Фестивальные локации <span class="badge-draft">ПРОЕКТ</span></h2>
+      <div class="landing-sub">Старая Териберка — основная территория.</div>
+      <div id="festivalList" class="zone-list"></div>
+      <div class="mini-legend">
+        <span class="symbol-line"></span> Пешеходный маршрут между локациями
+      </div>
+      <button id="festivalFocus" class="btn secondary">
+        Показать фестивальные локации крупнее
+      </button>
+      <label class="toggleline"
+        ><input id="festivalToggle" type="checkbox" checked /> Показать
+        фестивальные локации и маршрут</label
+      >
+      <div class="divide"></div>
+      <h2>02 / Экотропа <span class="badge-draft">ПРОЕКТ</span></h2>
+      <div class="roadlength">
+        5,6 км <span class="eco-time">· 1 ч 15 мин</span>
+      </div>
+      <div class="roadmeta">
+        Протяжённость и время — проектные параметры пешей прогулки, без
+        остановок.
+      </div>
+      <div class="eco-summary">
+        <b>НАЧАЛО</b><span>Скелет кита из фильма «Левиафан»</span><b>ФИНИШ</b
+        ><span>Пристань, Лодейная губа</span>
+      </div>
+      <div class="mini-legend">
+        <span class="symbol-eco"></span> Маршрут экотропы
+      </div>
+      <div class="section-kicker">Аудиоточки маршрута</div>
+      <div id="ecoList" class="zone-list"></div>
+      <button id="ecoFocus" class="btn secondary">
+        Показать экотропу целиком
+      </button>
+      <label class="toggleline"
+        ><input id="ecoToggle" type="checkbox" checked /> Показывать экотропу и
+        точки</label
+      >
+      <div class="divide"></div>
+      <h2>03 / Ресторан</h2>
+      <button id="polarFocus" class="poi-row">
+        <span class="poi-icon">♜</span
+        ><span
+          ><strong>«Полярный кит»</strong
+          ><small>ул. Комсомольская, 10 · Cedar Grass</small></span
+        >
+      </button>
+      <div class="divide"></div>
+
+      <h2>04 / Достопримечательности</h2>
+      <div id="mainlist"></div>
+      <div class="divide"></div>
+      <h2>05 / Природный парк «Териберка»</h2>
+      <div class="legend">
+        <p>
+          <span class="swatchpark"></span
+          ><b>Зелёная область — территория парка (3 кластера)</b>
+        </p>
+      </div>
+      <button id="parkToggle" class="btn secondary">
+        Скрыть границы парка
+      </button>
+      <button id="parkZoom" class="btn secondary">
+        Показать весь природный парк
+      </button>
+      <div class="divide"></div>
+      <h2>06 / Дополнительные ориентиры</h2>
+      <div id="extralist"></div>
+      <div class="divide"></div>
+      <div class="legend">
+        <p><span class="dot"></span>Основные объекты</p>
+        <p><span class="dot secondary"></span>Дополнительные точки</p>
+        <p>
+          Граница воды, береговая линия, дороги и мост — из картографической
+          основы. Зелёная область — природный парк; бордовые точки —
+          проектируемые фестивальные зоны.
+        </p>
+      </div>
+      <div class="info">
+        Основа: © OpenStreetMap contributors, OpenFreeMap. Фестивальные зоны
+        (кроме ДК) — проектные; это картографическая схема, а не геодезическая
+        съёмка. Зелёным показаны внешние границы природного парка,
+        <b>не функциональное зонирование</b>.<br /><br /><a
+          href="https://oopt-murman.ru/management/docs"
+          target="_blank"
+          rel="noopener"
+          style="color: #175d82"
+          >Документы ООПТ и схемы зонирования ↗</a
+        >
+      </div>
+    </div>
+    <div class="rightblock">
+      <div class="overline">БАРЕНЦЕВО МОРЕ</div>
+      <div class="title">Териберская губа</div>
+    </div>
+    <div class="north"><span class="arrow">▲</span>С</div>
+    <div class="status" id="status">
+      WGS 84 · береговая линия OpenStreetMap · масштаб внизу слева
+    </div>
+
+    <script>
+      /* Official park borders are sourced ONLY from the 2025 regulation. This page converts
+   all 968 cadastre vertices (МСК-51, зона 1) to WGS84. Preview cluster 1
+   is schematic and must not be used for legal/geodesic decisions. */
+      const OFFICIAL_PDF =
+        'https://cdn.gov-murman.ru/oopt/temporary_uploaded_file/2025/12/03/e7d755d1aef5d1ceeb803e20063a334c/fab20150-19be-4bfa-a585-c780a7af7f5b.pdf'
+      const PARK_PREVIEW = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: { cluster: 1, quality: 'preview', name: 'Кластер 1' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [35.00018, 69.205228],
+                  [35.011, 69.211],
+                  [35.021, 69.218],
+                  [35.033, 69.218],
+                  [35.048, 69.219],
+                  [35.065, 69.215],
+                  [35.077, 69.212],
+                  [35.09, 69.208],
+                  [35.11, 69.205],
+                  [35.131209, 69.196033],
+                  [35.123135, 69.195976],
+                  [35.100603, 69.201681],
+                  [35.097501, 69.200239],
+                  [35.101299, 69.200183],
+                  [35.120544, 69.19601],
+                  [35.09552, 69.192498],
+                  [35.109057, 69.179031],
+                  [35.099557, 69.160639],
+                  [35.071924, 69.170106],
+                  [35.093742, 69.172178],
+                  [35.102702, 69.173813],
+                  [35.097631, 69.177601],
+                  [35.08292, 69.178254],
+                  [35.083916, 69.177506],
+                  [35.041811, 69.198704],
+                  [35.015238, 69.199781],
+                  [35.00018, 69.205228]
+                ]
+              ]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: {
+              cluster: 2,
+              quality: 'official_vertices',
+              name: 'Кластер 2'
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [35.099405823611995, 69.14435032615062],
+                  [35.09968598206782, 69.14582470649924],
+                  [35.10319222871714, 69.14758450848142],
+                  [35.11262785504096, 69.15147937459732],
+                  [35.12266452164621, 69.1574072151108],
+                  [35.151499298529984, 69.15576061787642],
+                  [35.15662697791941, 69.15559201404707],
+                  [35.15689782501478, 69.15967979518905],
+                  [35.15926036518831, 69.16067962022751],
+                  [35.16001346661625, 69.16074616537416],
+                  [35.168334823522606, 69.16024103274536],
+                  [35.193902623902524, 69.15600263885284],
+                  [35.19291301355156, 69.14973586249708],
+                  [35.19179521843776, 69.14935146176674],
+                  [35.189999000472284, 69.14897556184796],
+                  [35.18857180105572, 69.14869473496752],
+                  [35.18783471729487, 69.14851898422067],
+                  [35.1862466899838, 69.14782726945627],
+                  [35.18581059466286, 69.14746254971831],
+                  [35.18457311032011, 69.14707967207784],
+                  [35.18382627945017, 69.14680437619344],
+                  [35.184192687277786, 69.14647215235068],
+                  [35.1840159471357, 69.14630352746299],
+                  [35.18414274608907, 69.14597443799812],
+                  [35.18392343857397, 69.14577787443487],
+                  [35.19097958696159, 69.12406632029725],
+                  [35.183085635914956, 69.12271454956957],
+                  [35.16225577857616, 69.12087585255863],
+                  [35.16476067530735, 69.11648618003336],
+                  [35.15416038096548, 69.11568845721061],
+                  [35.15032349741596, 69.11771725991348],
+                  [35.15415204615848, 69.12366231097829],
+                  [35.155506526058524, 69.12528226514154],
+                  [35.15453293205221, 69.12694003594352],
+                  [35.151848828729634, 69.12789663145007],
+                  [35.150322009312795, 69.12795547973485],
+                  [35.15018874156986, 69.12797396168045],
+                  [35.15014967766672, 69.12811646604753],
+                  [35.14999421516594, 69.1283604286549],
+                  [35.149825014702564, 69.1284693061818],
+                  [35.14981560986318, 69.1285762722345],
+                  [35.149529111171056, 69.12870800793496],
+                  [35.14920546097069, 69.12886868623309],
+                  [35.149066277968274, 69.12907690361652],
+                  [35.148968310251426, 69.1292988222535],
+                  [35.148604186687706, 69.12945287412171],
+                  [35.148152282581144, 69.12952972129492],
+                  [35.147532689168116, 69.1295231832771],
+                  [35.14694466958136, 69.12943090391154],
+                  [35.146508022745394, 69.12945766234579],
+                  [35.14590647282232, 69.12963602282555],
+                  [35.14554587877063, 69.12982563213797],
+                  [35.14533416623349, 69.12990664646635],
+                  [35.136288923914314, 69.13079051344721],
+                  [35.12035294462082, 69.13227875182822],
+                  [35.112204526122866, 69.13228395678978],
+                  [35.10959184710872, 69.13490686790297],
+                  [35.10702489560188, 69.13941868368633],
+                  [35.099405823611995, 69.14435032615062]
+                ]
+              ]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: {
+              cluster: 3,
+              quality: 'official_vertices',
+              name: 'Кластер 3'
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [35.176750740526614, 69.17466122541903],
+                  [35.175548700514035, 69.17489587070403],
+                  [35.17594751837442, 69.17510263226],
+                  [35.17601673157011, 69.17547237607525],
+                  [35.17613245010263, 69.17571858878908],
+                  [35.176640066050865, 69.17620731710555],
+                  [35.17645549225171, 69.17659596470129],
+                  [35.1766832076925, 69.17678440019685],
+                  [35.17741864059149, 69.17687803513738],
+                  [35.178288451067466, 69.17706900900522],
+                  [35.17959015806678, 69.17747330813377],
+                  [35.180513382572215, 69.17775609217526],
+                  [35.181547047639214, 69.17810819973877],
+                  [35.18166695622164, 69.17838287239452],
+                  [35.18220000932511, 69.17885254453046],
+                  [35.1827968537877, 69.17895883418615],
+                  [35.1836098103046, 69.17937330332308],
+                  [35.18389359448865, 69.17954060154356],
+                  [35.18440371346241, 69.1795720994179],
+                  [35.185710487188466, 69.17956495763626],
+                  [35.18640112495681, 69.17953812961679],
+                  [35.187238878410014, 69.17964053038064],
+                  [35.18881613157484, 69.17998021464217],
+                  [35.18938770394672, 69.18007007335875],
+                  [35.18984155085712, 69.18011003599096],
+                  [35.19031924929657, 69.18022404948893],
+                  [35.190813378325245, 69.18050361160101],
+                  [35.191320191362976, 69.18058863895469],
+                  [35.191405292036485, 69.18068490141576],
+                  [35.19189352674062, 69.18069568872896],
+                  [35.192097697393024, 69.1806474284951],
+                  [35.19226846258097, 69.18058802418822],
+                  [35.19245823899573, 69.18055707944146],
+                  [35.19256478745203, 69.18049849421278],
+                  [35.192822805952595, 69.18050668262971],
+                  [35.19323374456764, 69.18043856154192],
+                  [35.19348080669139, 69.18033817731062],
+                  [35.19376389085258, 69.18027742758301],
+                  [35.19427126914967, 69.18020807190452],
+                  [35.19465540737265, 69.18019177438795],
+                  [35.19492030266227, 69.18010829181017],
+                  [35.19525436315671, 69.18007550174534],
+                  [35.19564692322264, 69.18005814981845],
+                  [35.19829464226101, 69.17935820027888],
+                  [35.19928106048562, 69.17889823812631],
+                  [35.1825072215543, 69.17533714544567],
+                  [35.18095475202123, 69.1742824013054],
+                  [35.18048863038802, 69.17419139703019],
+                  [35.17975721159078, 69.17410407495488],
+                  [35.17923880837987, 69.1739303802599],
+                  [35.17835633828115, 69.17400215010056],
+                  [35.176750740526614, 69.17466122541903]
+                ]
+              ]
+            }
+          }
+        ]
+      }
+      window.OFFICIAL_PARK_GEOJSON = window.OFFICIAL_PARK_GEOJSON || null
+      let parkExact = window.OFFICIAL_PARK_GEOJSON
+      let parkVisible = true,
+        parkLoading = false
+      const msk51 =
+        '+proj=tmerc +lat_0=0 +lon_0=32.03333333333 +k=1 +x_0=1400000 +y_0=-7011057.628 +ellps=krass +towgs84=23.57,-140.95,-79.8,0,0.35,0.79,-0.22 +units=m +no_defs'
+      function parkStatus(message, accurate) {
+        const s = document.getElementById('parkStatus')
+        if (!s) return
+        s.textContent = message
+        s.className = 'park-status ' + (accurate ? 'park-ready' : 'park-warn')
+        const button = document.getElementById('parkSave')
+        if (button) button.style.display = accurate ? 'block' : 'none'
+      }
+      function parkLayers() {
+        if (!map || !map.isStyleLoaded()) return
+        const data = parkExact || PARK_PREVIEW
+        if (!map.getSource('park-boundary'))
+          map.addSource('park-boundary', { type: 'geojson', data })
+        else map.getSource('park-boundary').setData(data)
+        let layerId = (map.getStyle().layers || []).find(
+          (l) => l.type === 'line' && /road|street|highway|motorway/i.test(l.id)
+        )?.id
+        if (!map.getLayer('park-green'))
+          map.addLayer(
+            {
+              id: 'park-green',
+              type: 'fill',
+              source: 'park-boundary',
+              layout: { visibility: parkVisible ? 'visible' : 'none' },
+              paint: {
+                'fill-color': '#5AAB76',
+                'fill-opacity': parkExact ? 0.38 : 0.2
+              }
+            },
+            layerId
+          )
+        if (!map.getLayer('park-contour'))
+          map.addLayer({
+            id: 'park-contour',
+            type: 'line',
+            source: 'park-boundary',
+            layout: { visibility: parkVisible ? 'visible' : 'none' },
+            paint: {
+              'line-color': '#27844B',
+              'line-width': parkExact ? 2.8 : 2,
+              'line-opacity': 1,
+              'line-dasharray': parkExact ? [1, 0] : [3, 2]
+            }
+          })
+        if (map.getLayer('park-green'))
+          map.setPaintProperty(
+            'park-green',
+            'fill-opacity',
+            parkExact ? 0.38 : 0.2
+          )
+        if (map.getLayer('park-contour')) {
+          map.setPaintProperty(
+            'park-contour',
+            'line-width',
+            parkExact ? 2.8 : 2
+          )
+          map.setPaintProperty(
+            'park-contour',
+            'line-dasharray',
+            parkExact ? [1, 0] : [3, 2]
+          )
+        }
+      }
+      async function readParkPdf(source) {
+        if (!window.pdfjsLib || !window.proj4)
+          throw Error(
+            'Библиотеки обработки PDF не загрузились — необходим интернет.'
+          )
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+        const handle =
+          typeof source === 'string'
+            ? { url: source, withCredentials: false }
+            : { data: new Uint8Array(await source.arrayBuffer()) }
+        const pdf = await pdfjsLib.getDocument(handle).promise
+        // Exact source structure: 968 vertices in three "Часть" sections of Annex 1 (PDF pages 24–116).
+        const coords = new Map()
+        for (let pageNo = 24; pageNo <= Math.min(pdf.numPages, 116); pageNo++) {
+          const page = await pdf.getPage(pageNo)
+          const items = (
+            await page.getTextContent({
+              normalizeWhitespace: true,
+              disableCombineTextItems: false
+            })
+          ).items
+          let text = items
+            .map((x) => x.str)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+          // Match the official three fields: index, X northing (m), Y easting (m).
+          // Some PDF engines insert whitespace inside the X/Y row; allow ordinary spaces only.
+          let regex =
+              /(?:^|\s)(\d{1,3})\s+(6\d{5}\.\d{2})\s+(1\d{6}\.\d{2})(?=\s|$)/g,
+            match
+          while ((match = regex.exec(text)) !== null) {
+            let i = Number(match[1])
+            if (i < 1 || i > 968) continue
+            let north = Number(match[2]),
+              east = Number(match[3])
+            if (
+              north < 660000 ||
+              north > 680000 ||
+              east < 1500000 ||
+              east > 1550000
+            )
+              continue
+            if (!coords.has(i)) coords.set(i, [east, north])
+          }
+        }
+        let missing = []
+        for (let i = 1; i <= 968; i++) if (!coords.has(i)) missing.push(i)
+        if (missing.length)
+          throw Error(
+            'PDF разобран не полностью: отсутствует ' +
+              missing.length +
+              ' из 968 координат (например: ' +
+              missing.slice(0, 12).join(', ') +
+              '). Зелёный пунктир пока остаётся предварительным.'
+          )
+        // Cross-check the combined survey-area against the official 24,185,282 m².
+        let polygonArea = (a, b) => {
+          let sum = 0
+          for (let i = a; i <= b; i++) {
+            let [ex, ny] = coords.get(i)
+            let [ex2, ny2] = coords.get(i === b ? a : i + 1)
+            sum += ex * ny2 - ex2 * ny
+          }
+          return Math.abs(sum / 2)
+        }
+        const areaSqM =
+          polygonArea(1, 859) + polygonArea(860, 917) + polygonArea(918, 968)
+        if (Math.abs(areaSqM - 24185282) > 150000)
+          throw Error(
+            'Контроль площади не пройден: ' +
+              Math.round(areaSqM / 10000) +
+              ' га вместо утверждённых 2418,5 га.'
+          )
+        proj4.defs('MSK51', msk51)
+        const convert = (i) => proj4('MSK51', 'WGS84', coords.get(i))
+        const parts = [
+          [1, 859],
+          [860, 917],
+          [918, 968]
+        ].map(([a, b], idx) => {
+          const ring = Array.from({ length: b - a + 1 }, (_, k) =>
+            convert(a + k)
+          )
+          ring.push(ring[0])
+          return {
+            type: 'Feature',
+            properties: {
+              cluster: idx + 1,
+              quality: 'official_2025_all_vertices',
+              name: 'Кластер ' + (idx + 1)
+            },
+            geometry: { type: 'Polygon', coordinates: [ring] }
+          }
+        })
+        const first = parts[0].geometry.coordinates[0][0],
+          third = parts[2].geometry.coordinates[0][0]
+        if (
+          Math.abs(first[0] - 35.00018) > 0.0002 ||
+          Math.abs(first[1] - 69.205228) > 0.0002 ||
+          Math.abs(third[0] - 35.176751) > 0.0002 ||
+          Math.abs(third[1] - 69.174661) > 0.0002
+        )
+          throw Error(
+            'Проверка координат не прошла: система координат не совпадает.'
+          )
+        return { type: 'FeatureCollection', features: parts }
+      }
+      async function loadParkPdf(source, auto = false) {
+        if (parkLoading) return
+        parkLoading = true
+        parkStatus(
+          auto
+            ? 'Проверяю координаты по официальному PDF…'
+            : 'Обрабатываю файл с 968 точками…',
+          false
+        )
+        try {
+          let g = await readParkPdf(source)
+          parkExact = g
+          parkLayers()
+          parkStatus(
+            'ТОЧНЫЙ КОНТУР · все 968 поворотных точек из положения 2025 года. Зелёная заливка — три кластера.',
+            true
+          )
+        } catch (e) {
+          console.warn('Official park PDF:', e)
+          parkStatus(
+            'ПРЕДВАРИТЕЛЬНЫЙ КОНТУР · кластер 1 приближённый. ' +
+              (auto
+                ? 'Для точной версии загрузите PDF через кнопку ниже.'
+                : e.message),
+            false
+          )
+        } finally {
+          parkLoading = false
+        }
+      }
+      function downloadParkMap() {
+        if (!parkExact) {
+          alert(
+            'Сперва загрузите официальный PDF, чтобы встроить все 968 координат.'
+          )
+          return
+        }
+        const doc = document.documentElement.cloneNode(true)
+        const save = doc.querySelector('#park-exact-payload')
+        if (save) save.remove()
+        const inject = doc.ownerDocument.createElement('script')
+        inject.id = 'park-exact-payload'
+        inject.textContent =
+          'window.OFFICIAL_PARK_GEOJSON = ' +
+          JSON.stringify(parkExact).replace(/</g, '\u003c') +
+          ';'
+        doc.querySelector('head').appendChild(inject)
+        const html = '<!doctype html>\n' + doc.outerHTML
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(
+          new Blob([html], { type: 'text/html;charset=utf-8' })
+        )
+        a.download = 'teriberka_park_official_boundaries_2025.html'
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000)
+      }
+      function parkSetup() {
+        if (parkExact) {
+          parkStatus(
+            'ТОЧНЫЙ КОНТУР · все 968 точек из официального приложения, 2025.',
+            true
+          )
+          parkLayers()
+        } else {
+          parkStatus(
+            'ПРЕДВАРИТЕЛЬНЫЙ КОНТУР · заливка по опорным точкам.',
+            false
+          )
+          parkLayers()
+        }
+        const input = document.getElementById('parkFile')
+        if (input)
+          input.addEventListener('change', (e) => {
+            if (e.target.files[0]) loadParkPdf(e.target.files[0])
+          })
+        const toggle = document.getElementById('parkToggle')
+        if (toggle)
+          toggle.addEventListener('click', () => {
+            parkVisible = !parkVisible
+            for (let id of ['park-green', 'park-contour'])
+              if (map.getLayer(id))
+                map.setLayoutProperty(
+                  id,
+                  'visibility',
+                  parkVisible ? 'visible' : 'none'
+                )
+            toggle.textContent = parkVisible
+              ? 'Скрыть границы парка'
+              : 'Показать границы парка'
+          })
+        const zoom = document.getElementById('parkZoom')
+        if (zoom)
+          zoom.addEventListener('click', () =>
+            map.fitBounds(
+              [
+                [34.99, 69.109],
+                [35.212, 69.223]
+              ],
+              { padding: viewPadding(55, 55), duration: 1000 }
+            )
+          )
+        const save = document.getElementById('parkSave')
+        if (save) save.addEventListener('click', downloadParkMap)
+      }
+    </script>
+
+    <script>
+      const pts = [
+        {
+          id: 1,
+          name: 'Стела «Териберка»',
+          short: 'Стела «Териберка»',
+          lat: 69.162147,
+          lon: 35.130263,
+          category: 'main',
+          note: 'Стела у въезда в Старую Териберку, рядом с мостом.',
+          src: 'https://2gis.ru/murmansk/geo/70030076352094983',
+          certainty: 'координаты 2ГИС'
+        },
+        {
+          id: 2,
+          name: 'Кладбище кораблей',
+          short: 'Кладбище кораблей',
+          lat: 69.169211,
+          lon: 35.122189,
+          category: 'main',
+          note: 'Береговая отмель у дороги между Старой Териберкой и Лодейным.',
+          src: 'https://www.tv21.ru/articles/puteshestvie-v-teriberku-doroga-razmeshenie-i-dostoprimechatelnosti',
+          certainty: 'сверено по двум источникам'
+        },
+        {
+          id: 3,
+          name: 'Заброшенная школа',
+          short: 'Заброшенная школа',
+          lat: 69.164947,
+          lon: 35.150405,
+          category: 'main',
+          note: 'Ул. Архангельская, 4А. Аварийное здание; заходить внутрь небезопасно.',
+          src: 'https://www.splav.ru/library/puteshestviya/teriberka-zimoj-instrukciya-po-primeneniyu/',
+          certainty: 'географическая отметка из путеводителя'
+        },
+        {
+          id: 4,
+          name: 'Выброшенный корабль',
+          short: 'Выброшенный корабль',
+          lat: 69.167412,
+          lon: 35.14366,
+          category: 'main',
+          note: 'Отдельный ржавый траулер на песчаном пляже.',
+          src: 'https://murmansk-teriberka.ru/vybroshennyj-korabl/',
+          certainty: 'опубликованные координаты'
+        },
+        {
+          id: 5,
+          name: 'Макет скелета кита («Левиафан»)',
+          short: 'Макет скелета кита',
+          lat: 69.168075,
+          lon: 35.133547,
+          category: 'main',
+          note: 'Бутафорский скелет на побережье Старой Териберки. Не путать с настоящим скелетом кашалота в Лодейном.',
+          src: 'https://murmansk-teriberka.ru/skelet-kita/',
+          certainty: 'сверено по нескольким источникам'
+        },
+        {
+          id: 6,
+          name: 'Причал «Сияние Севера» (Старая Териберка)',
+          short: 'Причал Старой Териберки',
+          lat: 69.167712,
+          lon: 35.130157,
+          category: 'main',
+          note: 'Причал морских прогулок на берегу Старой Териберки.',
+          src: 'https://seahike.ru/contacty',
+          certainty: 'координаты оператора'
+        },
+        {
+          id: 8,
+          name: 'Териберский мост',
+          short: 'Териберский мост',
+          lat: 69.163977,
+          lon: 35.132588,
+          category: 'extra',
+          note: 'Автомобильная переправа через реку Териберку, которая разделяет два берега.',
+          src: 'https://tur-ray.ru/teriberka-attractions.html',
+          certainty: 'публикуемые координаты'
+        },
+        {
+          id: 12,
+          name: 'Настоящий скелет кашалота (Лодейное)',
+          short: 'Скелет кашалота',
+          lat: 69.179116,
+          lon: 35.12237,
+          category: 'extra',
+          note: 'Настоящий скелет кашалота около Cedar Grass в Лодейном.',
+          src: 'https://murmansk-teriberka.ru/skelet-kashalota/',
+          certainty: 'опубликованные координаты'
+        },
+        {
+          id: 13,
+          name: 'Песчаный пляж Старой Териберки',
+          short: 'Песчаный пляж',
+          lat: 69.168206,
+          lon: 35.136169,
+          category: 'extra',
+          note: 'Пляж Старой Териберки; рядом качели и арт-объекты.',
+          src: 'https://murmansk-teriberka.ru/chto-posmotret-v-teriberke/',
+          certainty: 'ориентир участка пляжа'
+        }
+      ]
+      const geo = {
+        type: 'FeatureCollection',
+        name: 'Териберка — географические точки достопримечательностей',
+        crs: {
+          type: 'name',
+          properties: { name: 'urn:ogc:def:crs:OGC:1.3:CRS84' }
+        },
+        features: [
+          {
+            type: 'Feature',
+            id: 1,
+            properties: {
+              id: 1,
+              name: 'Стела «Териберка»',
+              category: 'main',
+              source: 'https://2gis.ru/murmansk/geo/70030076352094983',
+              quality: 'координаты 2ГИС',
+              note: 'Стела у въезда в Старую Териберку, рядом с мостом.'
+            },
+            geometry: { type: 'Point', coordinates: [35.130263, 69.162147] }
+          },
+          {
+            type: 'Feature',
+            id: 2,
+            properties: {
+              id: 2,
+              name: 'Кладбище кораблей',
+              category: 'main',
+              source:
+                'https://www.tv21.ru/articles/puteshestvie-v-teriberku-doroga-razmeshenie-i-dostoprimechatelnosti',
+              quality: 'сверено по двум источникам',
+              note: 'Береговая отмель у дороги между Старой Териберкой и Лодейным.'
+            },
+            geometry: { type: 'Point', coordinates: [35.122189, 69.169211] }
+          },
+          {
+            type: 'Feature',
+            id: 3,
+            properties: {
+              id: 3,
+              name: 'Заброшенная школа',
+              category: 'main',
+              source:
+                'https://www.splav.ru/library/puteshestviya/teriberka-zimoj-instrukciya-po-primeneniyu/',
+              quality: 'географическая отметка из путеводителя',
+              note: 'Ул. Архангельская, 4А. Аварийное здание; заходить внутрь небезопасно.'
+            },
+            geometry: { type: 'Point', coordinates: [35.150405, 69.164947] }
+          },
+          {
+            type: 'Feature',
+            id: 4,
+            properties: {
+              id: 4,
+              name: 'Выброшенный корабль',
+              category: 'main',
+              source: 'https://murmansk-teriberka.ru/vybroshennyj-korabl/',
+              quality: 'опубликованные координаты',
+              note: 'Отдельный ржавый траулер на песчаном пляже.'
+            },
+            geometry: { type: 'Point', coordinates: [35.14366, 69.167412] }
+          },
+          {
+            type: 'Feature',
+            id: 5,
+            properties: {
+              id: 5,
+              name: 'Макет скелета кита («Левиафан»)',
+              category: 'main',
+              source: 'https://murmansk-teriberka.ru/skelet-kita/',
+              quality: 'сверено по нескольким источникам',
+              note: 'Бутафорский скелет на побережье Старой Териберки. Не путать с настоящим скелетом кашалота в Лодейном.'
+            },
+            geometry: { type: 'Point', coordinates: [35.133547, 69.168075] }
+          },
+          {
+            type: 'Feature',
+            id: 6,
+            properties: {
+              id: 6,
+              name: 'Причал «Сияние Севера» (Старая Териберка)',
+              category: 'main',
+              source: 'https://seahike.ru/contacty',
+              quality: 'координаты оператора',
+              note: 'Причал морских прогулок на берегу Старой Териберки.'
+            },
+            geometry: { type: 'Point', coordinates: [35.130157, 69.167712] }
+          },
+          {
+            type: 'Feature',
+            id: 8,
+            properties: {
+              id: 8,
+              name: 'Териберский мост',
+              category: 'extra',
+              source: 'https://tur-ray.ru/teriberka-attractions.html',
+              quality: 'публикуемые координаты',
+              note: 'Автомобильная переправа через реку Териберку, которая разделяет два берега.'
+            },
+            geometry: { type: 'Point', coordinates: [35.132588, 69.163977] }
+          },
+          {
+            type: 'Feature',
+            id: 12,
+            properties: {
+              id: 12,
+              name: 'Настоящий скелет кашалота (Лодейное)',
+              category: 'extra',
+              source: 'https://murmansk-teriberka.ru/skelet-kashalota/',
+              quality: 'опубликованные координаты',
+              note: 'Настоящий скелет кашалота около Cedar Grass в Лодейном.'
+            },
+            geometry: { type: 'Point', coordinates: [35.12237, 69.179116] }
+          },
+          {
+            type: 'Feature',
+            id: 13,
+            properties: {
+              id: 13,
+              name: 'Песчаный пляж Старой Териберки',
+              category: 'extra',
+              source:
+                'https://murmansk-teriberka.ru/chto-posmotret-v-teriberke/',
+              quality: 'ориентир участка пляжа',
+              note: 'Пляж Старой Териберки; рядом качели и арт-объекты.'
+            },
+            geometry: { type: 'Point', coordinates: [35.136169, 69.168206] }
+          }
+        ]
+      }
+      const main = pts.filter((x) => x.category === 'main')
+      const extra = pts.filter((x) => x.category === 'extra')
+      let showExtras = true
+      const bounds = [
+        [35.048, 69.154],
+        [35.21, 69.214]
+      ]
+      function el(tag, cl) {
+        let e = document.createElement(tag)
+        if (cl) e.className = cl
+        return e
+      }
+      function addRows(group, id) {
+        let root = document.getElementById(id)
+        group.forEach((p) => {
+          let b = el('button', 'pinrow')
+          let circle = el(
+            'span',
+            'num ' + (p.category === 'extra' ? 'extra' : '')
+          )
+          circle.textContent = p.id
+          b.append(circle)
+          let t = el('span')
+          t.textContent = p.short
+          let tag = el('small', 'labelgrey')
+          tag.textContent =
+            p.category === 'main' ? 'Точка ' + p.id : 'Доп. точка ' + p.id
+          t.append(tag)
+          b.append(t)
+          b.onclick = () => focusPoint(p)
+          root.append(b)
+        })
+      }
+      addRows(main, 'mainlist')
+      addRows(extra, 'extralist')
+      let map
+      function focusPoint(p) {
+        if (!window.onlineMapActive) {
+          offlineFocus(p.lon, p.lat)
+          offlinePopupHTML(
+            '<div class="poptitle">' +
+              p.name +
+              '</div><div class="popbody">' +
+              p.note +
+              '</div>'
+          )
+          return
+        }
+        map.flyTo({
+          center: [p.lon, p.lat],
+          zoom: 15.2,
+          essential: true,
+          duration: 1100
+        })
+        setTimeout(() => showPopup(p), 850)
+      }
+      function showPopup(p) {
+        let h =
+          '<div class="poptitle">' +
+          p.id +
+          '. ' +
+          p.name +
+          '</div><div class="popbody">' +
+          p.note +
+          '</div><div class="popmeta">' +
+          p.lat.toFixed(6) +
+          '° N, ' +
+          p.lon.toFixed(6) +
+          '° E<br>' +
+          p.certainty +
+          '<a class="poplink" href="' +
+          p.src +
+          '" target="_blank" rel="noopener">Источник координат ↗</a></div>'
+        new maplibregl.Popup({ closeButton: true, maxWidth: '320px' })
+          .setLngLat([p.lon, p.lat])
+          .setHTML(h)
+          .addTo(map)
+      }
+      function recolor() {
+        let layers = map.getStyle().layers || []
+        layers.forEach((l) => {
+          let id = l.id.toLowerCase()
+          try {
+            if (l.type === 'background')
+              map.setPaintProperty(l.id, 'background-color', '#eef8fc')
+            if (l.type === 'fill') {
+              if (/water|ocean|sea|lake|river/.test(id))
+                map.setPaintProperty(l.id, 'fill-color', '#0a3559')
+              else if (/building/.test(id))
+                map.setPaintProperty(l.id, 'fill-color', '#c4d7e5')
+              else if (
+                /park|grass|landcover|wood|forest|nature|scrub|landuse/.test(id)
+              )
+                map.setPaintProperty(l.id, 'fill-color', '#dcebf0')
+              else if (/sand|beach/.test(id))
+                map.setPaintProperty(l.id, 'fill-color', '#eee9dc')
+              else if (/land|earth/.test(id))
+                map.setPaintProperty(l.id, 'fill-color', '#edf7fb')
+            }
+            if (l.type === 'line') {
+              if (/water|river|stream/.test(id))
+                map.setPaintProperty(l.id, 'line-color', '#497da0')
+              else if (/road|street|highway|motorway|trunk|minor/.test(id))
+                map.setPaintProperty(l.id, 'line-color', '#8ba8bc')
+              else if (/coast/.test(id))
+                map.setPaintProperty(l.id, 'line-color', '#749eb7')
+            }
+            if (l.type === 'symbol') {
+              if (/poi|housenumber|house_number/.test(id))
+                map.setLayoutProperty(l.id, 'visibility', 'none')
+              else if (l.paint && 'text-color' in l.paint)
+                map.setPaintProperty(
+                  l.id,
+                  'text-color',
+                  /water|marine|sea/.test(id) ? '#cae6f7' : '#53758e'
+                )
+            }
+          } catch (e) {}
+        })
+      }
+      function addPoints() {
+        map.addSource('teriberka-locations', { type: 'geojson', data: geo })
+        map.addLayer({
+          id: 'main-glow',
+          type: 'circle',
+          source: 'teriberka-locations',
+          filter: ['==', ['get', 'category'], 'main'],
+          paint: {
+            'circle-radius': 17,
+            'circle-color': '#edf7fb',
+            'circle-opacity': 0.9,
+            'circle-stroke-width': 0
+          }
+        })
+        map.addLayer({
+          id: 'main-pins',
+          type: 'circle',
+          source: 'teriberka-locations',
+          filter: ['==', ['get', 'category'], 'main'],
+          paint: {
+            'circle-radius': 12.5,
+            'circle-color': '#08375b',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#eef8fc'
+          }
+        })
+        map.addLayer({
+          id: 'extra-pins',
+          type: 'circle',
+          source: 'teriberka-locations',
+          filter: ['==', ['get', 'category'], 'extra'],
+          paint: {
+            'circle-radius': 10.5,
+            'circle-color': '#edf7fb',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#0d456b'
+          }
+        })
+        map.addLayer({
+          id: 'main-numbers',
+          type: 'symbol',
+          source: 'teriberka-locations',
+          filter: ['==', ['get', 'category'], 'main'],
+          layout: {
+            'text-field': ['to-string', ['get', 'id']],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 12,
+            'text-allow-overlap': true
+          },
+          paint: { 'text-color': '#ffffff' }
+        })
+        map.addLayer({
+          id: 'extra-numbers',
+          type: 'symbol',
+          source: 'teriberka-locations',
+          filter: ['==', ['get', 'category'], 'extra'],
+          layout: {
+            'text-field': ['to-string', ['get', 'id']],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 10.5,
+            'text-allow-overlap': true
+          },
+          paint: { 'text-color': '#08375b' }
+        })
+        // Сохраняем точность координат независимо от экранного размера маркера.
+        for (const layer of [
+          'main-glow',
+          'main-pins',
+          'extra-pins',
+          'main-numbers',
+          'extra-numbers'
+        ]) {
+          map.on('click', layer, (e) => {
+            if (
+              ecoVisible &&
+              map.getLayer('eco-stops-circle') &&
+              map.queryRenderedFeatures(e.point, {
+                layers: ['eco-stops-circle']
+              }).length
+            )
+              return
+            let id = e.features?.[0]?.properties?.id
+            let p = pts.find((x) => x.id == id)
+            if (p) showPopup(p)
+          })
+          map.on(
+            'mouseenter',
+            layer,
+            () => (map.getCanvas().style.cursor = 'pointer')
+          )
+          map.on('mouseleave', layer, () => (map.getCanvas().style.cursor = ''))
+        }
+        let places = {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: { name: 'ЛОДЕЙНОЕ\nВСПОМОГАТЕЛЬНАЯ ТЕРРИТОРИЯ' },
+              geometry: { type: 'Point', coordinates: [35.12, 69.1878] }
+            },
+            {
+              type: 'Feature',
+              properties: { name: 'СТАРАЯ ТЕРИБЕРКА\nОСНОВНАЯ ТЕРРИТОРИЯ' },
+              geometry: { type: 'Point', coordinates: [35.156, 69.1619] }
+            }
+          ]
+        }
+        map.addSource('areas', { type: 'geojson', data: places })
+        map.addLayer({
+          id: 'districts',
+          type: 'symbol',
+          source: 'areas',
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 14,
+            'text-max-width': 19,
+            'text-letter-spacing': 0.11,
+            'text-allow-overlap': true,
+            'text-anchor': 'center'
+          },
+          paint: {
+            'text-color': '#0b3455',
+            'text-halo-color': '#f2f9fc',
+            'text-halo-width': 3.2
+          }
+        })
+      }
+
+      // PROJECTED FESTIVAL SITES — stage / gastro / market are NOT surveyed or approved.
+      const festivalSites = [
+        {
+          id: 'dk',
+          name: 'Дом культуры',
+          glyph: 'ДК',
+          lon: 35.138748,
+          lat: 69.165528,
+          verified: true,
+          address: 'ул. 1-й Пятилетки, д. 14',
+          description:
+            'Териберский Дом Культуры, где регулярно проходят развлекательные вечера',
+          source: 'https://2gis.ru/murmansk/firm/70000001047893576'
+        },
+        {
+          id: 'stage',
+          name: 'Сцена',
+          glyph: 'С',
+          lon: 35.1431,
+          lat: 69.1662,
+          verified: false,
+          address: 'Адрес уточняется',
+          description: 'Главная точка притяжения любителей музыки'
+        },
+        {
+          id: 'food',
+          name: 'Гастрозона',
+          glyph: 'Г',
+          lon: 35.1473,
+          lat: 69.1659,
+          verified: false,
+          address: 'Адрес уточняется',
+          description: 'Фудкорт с возможностью попробовать местную кухню'
+        },
+        {
+          id: 'art',
+          name: 'Арт-зона / маркет',
+          glyph: 'А',
+          lon: 35.1538,
+          lat: 69.1674,
+          verified: false,
+          address: 'Адрес уточняется',
+          description: 'Концептуальное пространство для ценителей искусства'
+        }
+      ]
+      const polarWhale = {
+        name: 'Ресторан «Полярный кит»',
+        lon: 35.122486,
+        lat: 69.179032,
+        address: 'Комсомольская ул., 10',
+        note: 'Ресторан при отеле Cedar Grass Териберка.',
+        source: 'https://murmansk.travel/places/942'
+      }
+      let festivalVisible = true,
+        roadVisible = true,
+        reliefVisible = true,
+        roadExact = false
+      function viewPadding(top = 68, bottom = 68) {
+        return window.innerWidth < 760
+          ? { left: 18, right: 18, top: 55, bottom: 310 }
+          : { left: 412, right: 70, top, bottom }
+      }
+      let roadKmApprox = 5
+      const roadFallback = [
+        [35.138267, 69.165536],
+        [35.1364, 69.1649],
+        [35.132588, 69.163977],
+        [35.1295, 69.1638],
+        [35.1266, 69.1645],
+        [35.1242, 69.1666],
+        [35.1222, 69.1692],
+        [35.1213, 69.1721],
+        [35.1219, 69.1753],
+        [35.122486, 69.179032],
+        [35.1218, 69.1823],
+        [35.1211, 69.1858],
+        [35.1225, 69.1891],
+        [35.123968, 69.19356]
+      ]
+      const lineGeo = (coordinates) => ({
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {},
+            geometry: { type: 'LineString', coordinates }
+          }
+        ]
+      })
+
+      // CONCEPT TERRITORIES: shapes reproduce the visual planning logic from the user's
+      // reference, georeferenced onto the village. These are not surveyed land parcels.
+      // Old Teriberka — elongated coastal ribbon enclosing the four proposed venues.
+      // Lodeynoye — separate narrower dotted auxiliary area on the western shore.
+      const festivalTerritories = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: { zone: 'old', label: 'Старая Териберка' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [35.1337, 69.16605],
+                  [35.13455, 69.16695],
+                  [35.13625, 69.16766],
+                  [35.1383, 69.16802],
+                  [35.14105, 69.16832],
+                  [35.1451, 69.16846],
+                  [35.14935, 69.16832],
+                  [35.1531, 69.16812],
+                  [35.15675, 69.16778],
+                  [35.15905, 69.16711],
+                  [35.15765, 69.16616],
+                  [35.1556, 69.16526],
+                  [35.15395, 69.16448],
+                  [35.15255, 69.16358],
+                  [35.1508, 69.16272],
+                  [35.14875, 69.16206],
+                  [35.1462, 69.16171],
+                  [35.1439, 69.16212],
+                  [35.1416, 69.16294],
+                  [35.1402, 69.16367],
+                  [35.13875, 69.16428],
+                  [35.1378, 69.16512],
+                  [35.1362, 69.16554],
+                  [35.1349, 69.16549],
+                  [35.1337, 69.16605]
+                ]
+              ]
+            }
+          },
+          {
+            type: 'Feature',
+            properties: { zone: 'lodeynoe', label: 'Лодейное' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [35.114, 69.1953],
+                  [35.11745, 69.19552],
+                  [35.1206, 69.19492],
+                  [35.1232, 69.1937],
+                  [35.12435, 69.1919],
+                  [35.1237, 69.19015],
+                  [35.12515, 69.18785],
+                  [35.12535, 69.18505],
+                  [35.12385, 69.18242],
+                  [35.1213, 69.1804],
+                  [35.1183, 69.18013],
+                  [35.11555, 69.1821],
+                  [35.11315, 69.1851],
+                  [35.11195, 69.18866],
+                  [35.11242, 69.19228],
+                  [35.114, 69.1953]
+                ]
+              ]
+            }
+          }
+        ]
+      }
+
+      // The lines below are conceptual walk connections, NOT a confirmed public footpath graph.
+      const festivalWalk = [
+        [35.138748, 69.165528],
+        [35.1398, 69.16585],
+        [35.14165, 69.16615],
+        [35.1431, 69.1662], // stage — concept location inland from the beach
+        [35.145, 69.16599],
+        [35.1473, 69.1659], // gastro
+        [35.1488, 69.1663],
+        [35.1512, 69.167],
+        [35.1538, 69.1674] // art/market
+      ]
+      function makeSiteMarkup(s) {
+        let badge = s.verified ? 'Подтверждённая точка' : 'Проектное размещение'
+        return `<div class="poptitle">${s.name}</div><div class="popbody">${s.description}<br><b>Место:</b> ${s.address}</div><div class="popmeta">${badge} · ${s.lat.toFixed(6)}° N, ${s.lon.toFixed(6)}° E${s.source ? '<a class="poplink" target="_blank" rel="noopener" href="' + s.source + '">Источник координат ↗</a>' : ''}</div>`
+      }
+      function focusFestival(s) {
+        if (!window.onlineMapActive) {
+          offlineFocus(s.lon, s.lat)
+          offlinePopupHTML(makeSiteMarkup(s))
+          return
+        }
+        map.flyTo({ center: [s.lon, s.lat], zoom: 15.9, duration: 800 })
+        setTimeout(
+          () =>
+            new maplibregl.Popup({ maxWidth: '340px' })
+              .setLngLat([s.lon, s.lat])
+              .setHTML(makeSiteMarkup(s))
+              .addTo(map),
+          700
+        )
+      }
+      function showPolar() {
+        if (!window.onlineMapActive) {
+          offlineFocus(polarWhale.lon, polarWhale.lat)
+          offlinePopupHTML(
+            '<div class="poptitle">' +
+              polarWhale.name +
+              '</div><div class="popbody">' +
+              polarWhale.address +
+              '</div>'
+          )
+          return
+        }
+        map.flyTo({
+          center: [polarWhale.lon, polarWhale.lat],
+          zoom: 16,
+          duration: 800
+        })
+        setTimeout(
+          () =>
+            new maplibregl.Popup({ maxWidth: '340px' })
+              .setLngLat([polarWhale.lon, polarWhale.lat])
+              .setHTML(
+                `<div class="poptitle">${polarWhale.name}</div><div class="popbody">${polarWhale.address}<br>${polarWhale.note}</div><div class="popmeta">69.179032° N, 35.122486° E<a class="poplink" href="${polarWhale.source}" target="_blank" rel="noopener">Региональный туристический портал ↗</a></div>`
+              )
+              .addTo(map),
+          700
+        )
+      }
+      function setupFestivalSidebar() {
+        const root = document.getElementById('festivalList')
+        root.replaceChildren()
+        festivalSites.forEach((s) => {
+          let b = document.createElement('button')
+          b.className = 'zone-row'
+          let detail = s.verified ? s.address : 'Адрес уточняется'
+          b.innerHTML = `<span class="zone-icon">${s.glyph}</span><span><strong>${s.name}</strong><small>${detail}</small></span>`
+          b.onclick = () => focusFestival(s)
+          root.append(b)
+        })
+        document.getElementById('polarFocus').onclick = showPolar
+        document.getElementById('festivalFocus').onclick = () =>
+          map.fitBounds(
+            [
+              [35.127, 69.163],
+              [35.154, 69.1715]
+            ],
+            { padding: viewPadding(95, 95), duration: 850 }
+          )
+        document.getElementById('festivalToggle').onchange = (e) => {
+          festivalVisible = e.target.checked
+          ;[
+            'fest-zone-old-fill',
+            'fest-zone-lodeynoe-fill',
+            'fest-zone-dots',
+            'fest-zone-border',
+            'fest-glow',
+            'fest-area',
+            'fest-circle',
+            'fest-text',
+            'fest-route-shadow',
+            'fest-route'
+          ].forEach(
+            (id) =>
+              map.getLayer(id) &&
+              map.setLayoutProperty(
+                id,
+                'visibility',
+                festivalVisible ? 'visible' : 'none'
+              )
+          )
+        }
+      }
+
+      // ECOTRAIL / INTERPRETIVE STATIONS: entirely proposed, must be surveyed and permitted.
+      // Two markers are estimated from the user's map screenshots, not cadastral coordinates.
+      const ecoStops = [
+        {
+          id: '01',
+          name: 'Большуха. Та, на ком держится дом',
+          lon: 35.120106,
+          lat: 69.164004,
+          loc: 'Склон западнее дороги, южная часть бухты; по первому скриншоту (проектная привязка)',
+          theme: 'жизнь поморской семьи и самостоятельность женщины.',
+          story:
+            'Гость знакомится с историей женщины, которая во время отсутствия мужчин на промысле управляла хозяйством, принимала решения и отвечала за благополучие семьи.',
+          format:
+            'аудиорассказ от первого лица, основанный на исторических материалах о роли поморок.',
+          task: 'сразу показать, что жизнь на Севере требовала самостоятельности от каждого, а история региона — не только история мореплавателей.'
+        },
+        {
+          id: '02',
+          name: 'Море взяло',
+          lon: 35.122189,
+          lat: 69.169211,
+          loc: 'Кладбище кораблей',
+          theme:
+            'морской промысел, опасность и зависимость человека от природы.',
+          story:
+            'Здесь раскрывается повседневная жизнь рыбаков: выходы в море, ожидание возвращения лодок, штормы и цена ошибки. Можно использовать фрагмент поморского сказания «Гнев» Бориса Шергина, где море выступает силой, способной вершить собственный суд.',
+          format:
+            'звуковая композиция из рассказа, скрипа деревянного судна, ветра и волн.',
+          task: 'дать почувствовать масштаб стихии и понять, почему море занимало центральное место в жизни поморов.'
+        },
+        {
+          id: '03',
+          name: 'Знаки моря',
+          lon: 35.122486,
+          lat: 69.179032,
+          loc: 'Ресторан «Полярный кит»',
+          theme: 'приметы, поверья и умение читать природу.',
+          story:
+            'Поморы внимательно наблюдали за погодой, ветром, водой и поведением птиц. Практические знания соседствовали с народными поверьями, помогавшими осмыслить то, что невозможно было контролировать.',
+          format:
+            'короткая аудиоистория о северных приметах, реальные звуки окружающей среды и рассказ о том, как наблюдения за природой помогали в повседневной жизни.',
+          task: 'вовлечь гостя в исследование окружающего пространства — предложить не просто смотреть на пейзаж, а замечать его детали.'
+        },
+        {
+          id: '04',
+          name: 'Память моря',
+          lon: 35.11673,
+          lat: 69.18554,
+          loc: 'У Комсомольской улицы, западнее дороги, рядом с Teriberka Hotel by EcoHome; по второму скриншоту (проектная привязка)',
+          theme: 'рыбацкое прошлое и история старой Териберки.',
+          story:
+            'Финальная точка связывает поморскую культуру с историей самого поселения. Старые суда и остатки прежней жизни становятся материальными свидетельствами того, как менялся Север и как постепенно исчезали привычные промыслы.',
+          format:
+            'исторический рассказ, фотографии Териберки разных лет и аудиосвидетельства местных жителей.',
+          task: 'показать, что история не заканчивается вместе с людьми и их занятиями — она продолжает жить в пространстве.'
+        }
+      ]
+      const ecoPath = [
+        [35.133547, 69.168075],
+        [35.1331, 69.16745],
+        [35.1345, 69.1666],
+        [35.1349, 69.1658],
+        [35.1338, 69.16455],
+        [35.132588, 69.163977],
+        [35.1309, 69.1637],
+        [35.1282, 69.1633],
+        [35.1253, 69.1629],
+        [35.122, 69.16315],
+        [35.120106, 69.164004],
+        [35.1177, 69.16455],
+        [35.1162, 69.1654],
+        [35.1138, 69.1658],
+        [35.1129, 69.16665],
+        [35.11525, 69.16645],
+        [35.1165, 69.16715],
+        [35.1172, 69.1679],
+        [35.1192, 69.16875],
+        [35.122189, 69.169211],
+        [35.1196, 69.1704],
+        [35.1179, 69.1716],
+        [35.1159, 69.17195],
+        [35.1147, 69.17245],
+        [35.1171, 69.1727],
+        [35.11925, 69.17365],
+        [35.119, 69.175],
+        [35.1191, 69.1763],
+        [35.1203, 69.17725],
+        [35.122486, 69.179032],
+        [35.1204, 69.18],
+        [35.1189, 69.1809],
+        [35.1169, 69.18185],
+        [35.1159, 69.183],
+        [35.1161, 69.1843],
+        [35.11673, 69.18554],
+        [35.11765, 69.18552],
+        [35.11903, 69.18543],
+        [35.12064, 69.18521],
+        [35.12178, 69.18507],
+        [35.12294, 69.18485],
+        [35.12422, 69.18436],
+        [35.12488, 69.18376],
+        [35.12547, 69.18318],
+        [35.12605, 69.18263],
+        [35.12692, 69.18246],
+        [35.12692, 69.18181]
+      ]
+      const ecoStart = {
+        name: 'Начало экотропы — скелет кита из фильма «Левиафан»',
+        lon: 35.133547,
+        lat: 69.168075
+      }
+      const ecoFinish = {
+        name: 'Финиш — пристань Лодейной губы',
+        lon: 35.12692,
+        lat: 69.18181,
+        address:
+          'Мурманская область, Кольский район, сельское поселение Териберка, Лодейная губа',
+        note: 'Живописное место, с которого начинаются экскурсии в море.'
+      }
+      let ecoVisible = true
+      function makeEcoCard(p) {
+        return (
+          `<div class="eco-popup-label">Аудиоточка ${p.id} · экотропа</div>` +
+          `<div class="poptitle">«${p.name}»</div>` +
+          `<div class="popbody"><p class="eco-popup-text"><strong>Тема:</strong> ${p.theme}</p>` +
+          `<p class="eco-popup-text">${p.story}</p>` +
+          `<p class="eco-popup-text"><strong>Формат:</strong> ${p.format}</p>` +
+          `<p class="eco-popup-text"><strong>Задача:</strong> ${p.task}</p>` +
+          `</div>`
+        )
+      }
+      function ecoPopup(p) {
+        if (!window.onlineMapActive) {
+          offlineFocus(p.lon, p.lat)
+          offlinePopupHTML(makeEcoCard(p))
+          return
+        }
+        new maplibregl.Popup({ maxWidth: '400px' })
+          .setLngLat([p.lon, p.lat])
+          .setHTML(makeEcoCard(p))
+          .addTo(map)
+      }
+      function ecoEndpointPopup(which) {
+        if (!window.onlineMapActive) {
+          let endpoint = which === 'start' ? ecoStart : ecoFinish
+          offlineFocus(endpoint.lon, endpoint.lat)
+          offlinePopupHTML('<div class="poptitle">' + endpoint.name + '</div>')
+          return
+        }
+        let p = which === 'start' ? ecoStart : ecoFinish
+        let detail =
+          which === 'start'
+            ? 'Скелет из фильма «Левиафан» на пляже Старой Териберки.'
+            : p.address + '<br>' + p.note
+        new maplibregl.Popup({ maxWidth: '350px' })
+          .setLngLat([p.lon, p.lat])
+          .setHTML(
+            `<div class="eco-popup-label">${which === 'start' ? 'Старт экотропы' : 'Финиш экотропы'}</div><div class="poptitle">${p.name}</div><div class="popbody">${detail}</div>`
+          )
+          .addTo(map)
+      }
+      function ecoFocusPoint(p) {
+        if (!window.onlineMapActive) {
+          ecoPopup(p)
+          return
+        }
+        map.flyTo({
+          center: [p.lon, p.lat],
+          zoom: 16.0,
+          essential: true,
+          duration: 850
+        })
+        setTimeout(() => ecoPopup(p), 650)
+      }
+      function ecoFullView() {
+        if (!window.onlineMapActive) {
+          offlineSetRegion(35.108, 69.16, 35.147, 69.189)
+          return
+        }
+        map.fitBounds(
+          [
+            [35.11, 69.1615],
+            [35.14, 69.187]
+          ],
+          { padding: viewPadding(80, 75), duration: 900 }
+        )
+      }
+      function setupEcoSidebar() {
+        const list = document.getElementById('ecoList')
+        list.replaceChildren()
+        ecoStops.forEach((p) => {
+          let row = document.createElement('button')
+          row.className = 'eco-row'
+          row.innerHTML = `<span class="eco-index">${p.id}</span><span><strong>«${p.name}»</strong></span>`
+          row.onclick = () => ecoFocusPoint(p)
+          list.appendChild(row)
+        })
+        document.getElementById('ecoFocus').onclick = ecoFullView
+        document.getElementById('ecoToggle').onchange = (e) => {
+          ecoVisible = e.target.checked
+          ;[
+            'eco-line-white',
+            'eco-line',
+            'eco-stops-circle',
+            'eco-stops-text',
+            'eco-terminal-circle',
+            'eco-terminal-text'
+          ].forEach(
+            (id) =>
+              map.getLayer(id) &&
+              map.setLayoutProperty(
+                id,
+                'visibility',
+                ecoVisible ? 'visible' : 'none'
+              )
+          )
+        }
+      }
+      function setupEcoLayers() {
+        map.addSource('eco-route', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: { type: 'draft_route' },
+                geometry: { type: 'LineString', coordinates: ecoPath }
+              }
+            ]
+          }
+        })
+        map.addSource('eco-stations', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: ecoStops.map((p) => ({
+              type: 'Feature',
+              properties: { id: p.id, name: p.name },
+              geometry: { type: 'Point', coordinates: [p.lon, p.lat] }
+            }))
+          }
+        })
+        map.addSource('eco-terminals', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: { type: 'start', symbol: 'Н' },
+                geometry: {
+                  type: 'Point',
+                  coordinates: [ecoStart.lon, ecoStart.lat]
+                }
+              },
+              {
+                type: 'Feature',
+                properties: { type: 'finish', symbol: 'Ф' },
+                geometry: {
+                  type: 'Point',
+                  coordinates: [ecoFinish.lon, ecoFinish.lat]
+                }
+              }
+            ]
+          }
+        })
+        map.addLayer({
+          id: 'eco-line-white',
+          type: 'line',
+          source: 'eco-route',
+          paint: {
+            'line-color': '#f6fcfa',
+            'line-width': 7,
+            'line-opacity': 0.92
+          }
+        })
+        map.addLayer({
+          id: 'eco-line',
+          type: 'line',
+          source: 'eco-route',
+          paint: {
+            'line-color': '#bd5d7e',
+            'line-width': 3.6,
+            'line-opacity': 0.98,
+            'line-dasharray': [2.0, 1.0]
+          }
+        })
+        map.addLayer({
+          id: 'eco-stops-circle',
+          type: 'circle',
+          source: 'eco-stations',
+          paint: {
+            'circle-radius': 15,
+            'circle-color': '#bd5d7e',
+            'circle-stroke-color': '#fff',
+            'circle-stroke-width': 3
+          }
+        })
+        map.addLayer({
+          id: 'eco-stops-text',
+          type: 'symbol',
+          source: 'eco-stations',
+          layout: {
+            'text-field': ['get', 'id'],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 11,
+            'text-allow-overlap': true
+          },
+          paint: { 'text-color': '#ffffff' }
+        })
+        map.addLayer({
+          id: 'eco-terminal-circle',
+          type: 'circle',
+          source: 'eco-terminals',
+          paint: {
+            'circle-radius': 14,
+            'circle-color': '#fff',
+            'circle-stroke-color': '#bd5d7e',
+            'circle-stroke-width': 3
+          }
+        })
+        map.addLayer({
+          id: 'eco-terminal-text',
+          type: 'symbol',
+          source: 'eco-terminals',
+          layout: {
+            'text-field': ['get', 'symbol'],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 12,
+            'text-allow-overlap': true
+          },
+          paint: { 'text-color': '#bd5d7e' }
+        })
+        for (const id of ['eco-stops-circle', 'eco-stops-text']) {
+          map.on('click', id, (e) => {
+            let p = ecoStops.find(
+              (p) => p.id === e.features?.[0]?.properties?.id
+            )
+            if (p) ecoPopup(p)
+          })
+          map.on(
+            'mouseenter',
+            id,
+            () => (map.getCanvas().style.cursor = 'pointer')
+          )
+          map.on('mouseleave', id, () => (map.getCanvas().style.cursor = ''))
+        }
+        for (const id of ['eco-terminal-circle', 'eco-terminal-text']) {
+          map.on('click', id, (e) =>
+            ecoEndpointPopup(
+              e.features?.[0]?.properties?.type === 'start' ? 'start' : 'finish'
+            )
+          )
+          map.on(
+            'mouseenter',
+            id,
+            () => (map.getCanvas().style.cursor = 'pointer')
+          )
+          map.on('mouseleave', id, () => (map.getCanvas().style.cursor = ''))
+        }
+        setupEcoSidebar()
+      }
+
+      function setupTopography() {
+        // Terrarium DEM: real elevation data, displayed as analytical hillshade rather than invented contour lines.
+        try {
+          map.addSource('global-elevation', {
+            type: 'raster-dem',
+            tiles: [
+              'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            maxzoom: 14,
+            encoding: 'terrarium'
+          })
+          const waterLayer = map
+            .getStyle()
+            .layers.find(
+              (l) => l.type === 'fill' && /water|sea|ocean/i.test(l.id)
+            )
+          const beforeId =
+            waterLayer?.id ||
+            map.getStyle().layers.find((l) => l.type === 'symbol')?.id
+          map.addLayer(
+            {
+              id: 'terrain-hillshade',
+              type: 'hillshade',
+              source: 'global-elevation',
+              layout: { visibility: 'visible' },
+              paint: {
+                'hillshade-exaggeration': 0.48,
+                'hillshade-shadow-color': '#386678',
+                'hillshade-highlight-color': '#f7fcfc',
+                'hillshade-accent-color': '#d2e5ec'
+              }
+            },
+            beforeId
+          )
+        } catch (err) {
+          console.warn('DEM layer unavailable:', err)
+        }
+        const p = {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              properties: { label: 'СОПКИ ВОСТОЧНОГО БЕРЕГА' },
+              geometry: { type: 'Point', coordinates: [35.193, 69.178] }
+            }
+          ]
+        }
+        map.addSource('hill-label', { type: 'geojson', data: p })
+        map.addLayer({
+          id: 'terrain-label',
+          type: 'symbol',
+          source: 'hill-label',
+          layout: {
+            'text-field': ['get', 'label'],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 11,
+            'text-letter-spacing': 0.14,
+            'text-max-width': 17,
+            'text-allow-overlap': false
+          },
+          paint: {
+            'text-color': '#537b89',
+            'text-halo-width': 2,
+            'text-halo-color': '#edf7fb'
+          }
+        })
+      }
+      function setupFestivalLayers() {
+        let festivals = {
+          type: 'FeatureCollection',
+          features: festivalSites.map((s) => ({
+            type: 'Feature',
+            properties: {
+              id: s.id,
+              glyph: s.glyph,
+              verified: s.verified,
+              name: s.name
+            },
+            geometry: { type: 'Point', coordinates: [s.lon, s.lat] }
+          }))
+        }
+        map.addSource('festival-territories', {
+          type: 'geojson',
+          data: festivalTerritories
+        })
+        map.addSource('festival-sites', { type: 'geojson', data: festivals })
+        map.addSource('festival-footpath', {
+          type: 'geojson',
+          data: lineGeo(festivalWalk)
+        })
+        map.addSource('road-corridor', {
+          type: 'geojson',
+          data: lineGeo(roadFallback)
+        })
+        map.addSource('restaurant-polar', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                properties: { name: polarWhale.name },
+                geometry: {
+                  type: 'Point',
+                  coordinates: [polarWhale.lon, polarWhale.lat]
+                }
+              }
+            ]
+          }
+        })
+        // Two festival territories: coastal Old Teriberka and dotted auxiliary Lodeynoye.
+        // Layer geometry is a conceptual festival plan, NOT the border of the protected park.
+        const fdot = document.createElement('canvas')
+        fdot.width = 16
+        fdot.height = 16
+        const fdctx = fdot.getContext('2d')
+        fdctx.fillStyle = 'rgba(9,59,95,.76)'
+        fdctx.beginPath()
+        fdctx.arc(8, 8, 1.7, 0, Math.PI * 2)
+        fdctx.fill()
+        map.addImage('festival-site-dots', fdctx.getImageData(0, 0, 16, 16))
+        map.addLayer({
+          id: 'fest-zone-old-fill',
+          type: 'fill',
+          source: 'festival-territories',
+          filter: ['==', ['get', 'zone'], 'old'],
+          paint: { 'fill-color': '#9db8c9', 'fill-opacity': 0.5 }
+        })
+        map.addLayer({
+          id: 'fest-zone-lodeynoe-fill',
+          type: 'fill',
+          source: 'festival-territories',
+          filter: ['==', ['get', 'zone'], 'lodeynoe'],
+          paint: { 'fill-color': '#cee3ee', 'fill-opacity': 0.43 }
+        })
+        map.addLayer({
+          id: 'fest-zone-dots',
+          type: 'fill',
+          source: 'festival-territories',
+          filter: ['==', ['get', 'zone'], 'lodeynoe'],
+          paint: { 'fill-pattern': 'festival-site-dots', 'fill-opacity': 0.8 }
+        })
+        map.addLayer({
+          id: 'fest-zone-border',
+          type: 'line',
+          source: 'festival-territories',
+          paint: {
+            'line-color': '#173f63',
+            'line-width': 2.8,
+            'line-opacity': 0.94
+          }
+        })
+        // Road, route, and festival points are separate layers: park overlays and existing landmarks remain intact.
+        map.addLayer({
+          id: 'road-under',
+          type: 'line',
+          source: 'road-corridor',
+          paint: {
+            'line-color': '#f9ffff',
+            'line-width': 9,
+            'line-opacity': 0.96
+          }
+        })
+        map.addLayer({
+          id: 'road-line',
+          type: 'line',
+          source: 'road-corridor',
+          paint: {
+            'line-color': '#0b3454',
+            'line-width': 5,
+            'line-opacity': 0.95,
+            'line-dasharray': [3.5, 1.8]
+          }
+        })
+        map.addLayer({
+          id: 'fest-route-shadow',
+          type: 'line',
+          source: 'festival-footpath',
+          paint: { 'line-color': '#fff', 'line-width': 6, 'line-opacity': 0.85 }
+        })
+        map.addLayer({
+          id: 'fest-route',
+          type: 'line',
+          source: 'festival-footpath',
+          paint: {
+            'line-color': '#bd5d7e',
+            'line-width': 3.1,
+            'line-dasharray': [1.3, 1.3]
+          }
+        })
+        map.addLayer({
+          id: 'fest-glow',
+          type: 'circle',
+          source: 'festival-sites',
+          paint: {
+            'circle-radius': ['case', ['get', 'verified'], 25, 30],
+            'circle-color': '#d78eaa',
+            'circle-opacity': 0.2,
+            'circle-blur': 0.28
+          }
+        })
+        map.addLayer({
+          id: 'fest-area',
+          type: 'circle',
+          source: 'festival-sites',
+          paint: {
+            'circle-radius': ['case', ['get', 'verified'], 17, 22],
+            'circle-color': '#d39bb4',
+            'circle-opacity': 0.16,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#b65d79',
+            'circle-stroke-opacity': 0.4
+          }
+        })
+        map.addLayer({
+          id: 'fest-circle',
+          type: 'circle',
+          source: 'festival-sites',
+          paint: {
+            'circle-radius': 15,
+            'circle-color': '#fff9fc',
+            'circle-stroke-width': 2.7,
+            'circle-stroke-color': '#8e375c'
+          }
+        })
+        map.addLayer({
+          id: 'fest-text',
+          type: 'symbol',
+          source: 'festival-sites',
+          layout: {
+            'text-field': ['get', 'glyph'],
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 12,
+            'text-allow-overlap': true
+          },
+          paint: { 'text-color': '#8e375c' }
+        })
+        map.addLayer({
+          id: 'polar-icon',
+          type: 'circle',
+          source: 'restaurant-polar',
+          paint: {
+            'circle-radius': 11,
+            'circle-color': '#f9f3e5',
+            'circle-stroke-width': 2.5,
+            'circle-stroke-color': '#ad7a3e'
+          }
+        })
+        map.addLayer({
+          id: 'polar-symbol',
+          type: 'symbol',
+          source: 'restaurant-polar',
+          layout: {
+            'text-field': 'Р',
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 12,
+            'text-allow-overlap': true
+          },
+          paint: { 'text-color': '#905e25' }
+        })
+        map.addLayer({
+          id: 'polar-label',
+          type: 'symbol',
+          source: 'restaurant-polar',
+          minzoom: 13,
+          layout: {
+            'text-field': 'Полярный кит',
+            'text-font': ['Noto Sans Regular'],
+            'text-size': 11,
+            'text-offset': [0, 1.7],
+            'text-anchor': 'top'
+          },
+          paint: {
+            'text-color': '#835926',
+            'text-halo-width': 2,
+            'text-halo-color': '#f6fbfd'
+          }
+        })
+        for (const id of ['fest-circle', 'fest-text', 'fest-area']) {
+          map.on('click', id, (e) => {
+            let f = festivalSites.find(
+              (s) => s.id === e.features?.[0]?.properties?.id
+            )
+            if (f)
+              new maplibregl.Popup({ maxWidth: '340px' })
+                .setLngLat([f.lon, f.lat])
+                .setHTML(makeSiteMarkup(f))
+                .addTo(map)
+          })
+          map.on(
+            'mouseenter',
+            id,
+            () => (map.getCanvas().style.cursor = 'pointer')
+          )
+          map.on('mouseleave', id, () => (map.getCanvas().style.cursor = ''))
+        }
+        for (const id of ['polar-icon', 'polar-symbol', 'polar-label']) {
+          map.on('click', id, (e) => {
+            if (
+              ecoVisible &&
+              map.getLayer('eco-stops-circle') &&
+              map.queryRenderedFeatures(e.point, {
+                layers: ['eco-stops-circle']
+              }).length
+            )
+              return
+            showPolar()
+          })
+          map.on(
+            'mouseenter',
+            id,
+            () => (map.getCanvas().style.cursor = 'pointer')
+          )
+          map.on('mouseleave', id, () => (map.getCanvas().style.cursor = ''))
+        }
+        setupFestivalSidebar()
+        setupEcoLayers()
+        loadRealRoadRoute()
+      }
+      async function loadRealRoadRoute() {
+        const a = '35.138267,69.165536',
+          b = '35.123968,69.193560'
+        const paths = [
+          `https://router.project-osrm.org/route/v1/driving/${a};${b}?overview=full&geometries=geojson&steps=false`,
+          `https://routing.openstreetmap.de/routed-car/route/v1/driving/${a};${b}?overview=full&geometries=geojson&steps=false`
+        ]
+        for (let url of paths) {
+          try {
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 9500)
+            let response = await fetch(url, {
+              signal: controller.signal,
+              mode: 'cors'
+            }).finally(() => clearTimeout(timeout))
+            if (!response.ok) throw Error('HTTP ' + response.status)
+            const data = await response.json()
+            let r = data.routes?.[0]
+            if (
+              !r ||
+              r.geometry?.type !== 'LineString' ||
+              r.geometry.coordinates.length < 5 ||
+              r.distance < 2200 ||
+              r.distance > 13000
+            )
+              throw Error('Invalid routing geometry')
+            // Reject implausible detours beyond the local Teriberka corridor.
+            if (
+              !r.geometry.coordinates.every(
+                (v) =>
+                  v[0] > 35.08 && v[0] < 35.19 && v[1] > 69.14 && v[1] < 69.23
+              )
+            )
+              throw Error('Outside of local corridor')
+            map.getSource('road-corridor').setData({
+              type: 'FeatureCollection',
+              features: [
+                {
+                  type: 'Feature',
+                  properties: { provider: 'OSRM / OSM', metres: r.distance },
+                  geometry: r.geometry
+                }
+              ]
+            })
+            roadExact = true
+            return
+          } catch (e) {
+            console.warn('Road routing service:', e.message)
+          }
+        }
+      }
+
+      function fit() {
+        if (!window.onlineMapActive) {
+          offlineReset()
+          return
+        }
+        map.fitBounds(bounds, { padding: viewPadding(65, 70), duration: 900 })
+      }
+      function startOnlineMap() {
+        if (!window.maplibregl || window.onlineMapActive) return
+        try {
+          map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://tiles.openfreemap.org/styles/liberty',
+            center: [35.132, 69.182],
+            zoom: 12.8,
+            maxZoom: 18,
+            attributionControl: true,
+            preserveDrawingBuffer: true,
+            hash: false,
+            pitchWithRotate: false,
+            bearing: 0
+          })
+          map.addControl(
+            new maplibregl.NavigationControl({ showCompass: true }),
+            'top-right'
+          )
+          map.addControl(
+            new maplibregl.ScaleControl({ maxWidth: 130, unit: 'metric' }),
+            'bottom-left'
+          )
+          map.on('load', () => {
+            try {
+              recolor()
+              setupTopography()
+              parkSetup()
+              addPoints()
+              setupFestivalLayers()
+              map.fitBounds(
+                [
+                  [34.99, 69.109],
+                  [35.212, 69.223]
+                ],
+                { padding: viewPadding(55, 55), duration: 900 }
+              )
+              window.onlineMapActive = true
+              document.getElementById('offlineMap').style.display = 'none'
+              document.getElementById('error').style.display = 'none'
+              if (window.pdfjsLib && window.proj4 && !parkExact)
+                setTimeout(() => loadParkPdf(OFFICIAL_PDF, true), 1200)
+              document.getElementById('status').textContent =
+                'Картографическая основа OpenStreetMap · масштаб внизу слева'
+            } catch (e) {
+              console.warn('Overlay initialization:', e)
+              document.getElementById('error').style.display = 'block'
+            }
+          })
+          map.on('error', (e) => {
+            if (e?.error?.message) console.warn('Map data:', e.error.message)
+          })
+          setTimeout(() => {
+            if (!window.onlineMapActive)
+              document.getElementById('error').style.display = 'block'
+          }, 14000)
+        } catch (e) {
+          console.warn('MapLibre unavailable:', e)
+        }
+      }
+    </script>
+    <script>
+      ;(function () {
+        'use strict'
+        const NS = 'http://www.w3.org/2000/svg'
+        const wrap = document.getElementById('offlineDrawing')
+        const svg = document.createElementNS(NS, 'svg')
+        svg.setAttribute('viewBox', '0 0 1200 900')
+        svg.setAttribute('role', 'img')
+        svg.setAttribute(
+          'aria-label',
+          'Резервная координатная карта: экотропа, зоны фестиваля и границы природного парка'
+        )
+        wrap.append(svg)
+        // Equirectangular geographical projection, longitude adjusted by cos(latitude).
+        const W = 1200,
+          H = 900,
+          lon0 = 35.11,
+          lat0 = 69.175
+        const scale = 29500,
+          cos = Math.cos((lat0 * Math.PI) / 180)
+        const xp = (lon) => 600 + (lon - lon0) * cos * scale
+        const yp = (lat) => 450 - (lat - lat0) * scale
+        const p = (coordinates) =>
+          coordinates
+            .map((v) => `${xp(v[0]).toFixed(1)},${yp(v[1]).toFixed(1)}`)
+            .join(' ')
+        const add = (tag, attrs = {}, par = svg) => {
+          let el = document.createElementNS(NS, tag)
+          for (let [k, v] of Object.entries(attrs))
+            el.setAttribute(k, String(v))
+          par.append(el)
+          return el
+        }
+        const L = {
+          park: add('g', { id: 'offline-park' }),
+          territories: add('g', { id: 'offline-fest-zones' }),
+          road: add('g', { id: 'offline-road' }),
+          festival: add('g', { id: 'offline-fest' }),
+          eco: add('g', { id: 'offline-eco' }),
+          points: add('g', { id: 'offline-points' })
+        }
+        let vb = [90, 45, 1080, 780]
+        function setVB() {
+          svg.setAttribute('viewBox', vb.join(' '))
+        }
+        window.offlineSetRegion = function (west, south, east, north) {
+          const l = xp(west),
+            r = xp(east),
+            t = yp(north),
+            b = yp(south)
+          vb = [
+            l - 70,
+            t - 55,
+            Math.max(320, r - l + 140),
+            Math.max(240, b - t + 110)
+          ]
+          setVB()
+        }
+        window.offlineReset = function () {
+          window.offlineSetRegion(35.094, 69.156, 35.204, 69.203)
+        }
+        window.offlineFocus = function (lon, lat) {
+          const w = Math.min(vb[2], 780),
+            h = Math.min(vb[3], 610)
+          vb = [xp(lon) - w / 2, yp(lat) - h / 2, w, h]
+          setVB()
+        }
+        window.offlinePopupHTML = function (markup) {
+          let e = document.getElementById('offlinePopup')
+          e.innerHTML =
+            '<button class="offlineClose" aria-label="Закрыть карточку">×</button>' +
+            markup
+          e.hidden = false
+          e.querySelector('button').onclick = () => (e.hidden = true)
+        }
+        function shade(i) {
+          return i === 0 ? '#e4f2e6' : '#d2eacb'
+        }
+        // Official park vertices available within the HTML, with cluster 1 preview status kept explicit.
+        ;(parkExact || PARK_PREVIEW).features.forEach((f, i) => {
+          const poly = f.geometry?.coordinates?.[0] || []
+          if (!poly.length) return
+          add(
+            'polygon',
+            {
+              points: p(poly),
+              fill: shade(i),
+              'fill-opacity': '.78',
+              stroke: '#398658',
+              'stroke-width': '2.2',
+              'stroke-dasharray':
+                f.properties.quality === 'preview' ? '6 4' : 'none'
+            },
+            L.park
+          )
+        })
+        // Proposed festival zones, use reference's original two-tone fill.
+        festivalTerritories.features.forEach((f) => {
+          add(
+            'polygon',
+            {
+              points: p(f.geometry.coordinates[0]),
+              fill: f.properties.zone === 'old' ? '#9bb8c9' : '#b9ddea',
+              'fill-opacity': '.62',
+              stroke: '#133f65',
+              'stroke-width': '2.3'
+            },
+            L.territories
+          )
+        })
+        // Main road, proposed festival pedestrian connections, proposed ecotrail.
+        const drawLine = (line, group, color, width, dash) => {
+          add(
+            'polyline',
+            {
+              points: p(line),
+              fill: 'none',
+              stroke: '#fff',
+              'stroke-width': width + 2.4,
+              'stroke-linejoin': 'round',
+              'stroke-linecap': 'round'
+            },
+            group
+          )
+          return add(
+            'polyline',
+            {
+              points: p(line),
+              fill: 'none',
+              stroke: color,
+              'stroke-width': width,
+              'stroke-dasharray': dash || 'none',
+              'stroke-linejoin': 'round',
+              'stroke-linecap': 'round'
+            },
+            group
+          )
+        }
+        drawLine(roadFallback, L.road, '#113e60', 4, '12 7')
+        drawLine(festivalWalk, L.festival, '#b65d79', 4, '7 7')
+        drawLine(ecoPath, L.eco, '#bd5d7e', 5, '10 6')
+        function text(
+          label,
+          lon,
+          lat,
+          cl = 'offline-pin-label',
+          par = L.points,
+          dx = 11,
+          dy = -11
+        ) {
+          const t = add(
+            'text',
+            { x: xp(lon) + dx, y: yp(lat) + dy, class: cl },
+            par
+          )
+          t.textContent = label
+          return t
+        }
+        function marker(lon, lat, label, opts = {}) {
+          const g = add(
+            'g',
+            {
+              class: 'offline-pin',
+              tabindex: '0',
+              role: 'button',
+              'aria-label': opts.title || label
+            },
+            opts.parent || L.points
+          )
+          const x = xp(lon),
+            y = yp(lat),
+            r = opts.r || 11
+          add(
+            'circle',
+            {
+              cx: x,
+              cy: y,
+              r,
+              fill: opts.color || '#0b3454',
+              stroke: '#fff',
+              'stroke-width': 2.4
+            },
+            g
+          )
+          if (label) {
+            const t = add(
+              'text',
+              {
+                x,
+                y: y + 4,
+                'text-anchor': 'middle',
+                fill: opts.textColor || '#fff',
+                'font-size': opts.fontsize || 10,
+                'font-weight': 800,
+                'font-family': 'Arial,sans-serif'
+              },
+              g
+            )
+            t.textContent = label
+          }
+          if (opts.title && opts.label !== false)
+            text(
+              opts.title,
+              lon,
+              lat,
+              'offline-pin-label',
+              g,
+              opts.dx ?? 11,
+              opts.dy ?? -11
+            )
+          if (opts.onclick) {
+            g.addEventListener('click', opts.onclick)
+            g.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                opts.onclick()
+              }
+            })
+          }
+          return g
+        }
+        festivalSites.forEach((s) =>
+          marker(s.lon, s.lat, s.glyph, {
+            parent: L.festival,
+            title: s.name,
+            color: '#fff',
+            textColor: '#903659',
+            onclick: () => focusFestival(s),
+            r: 13
+          })
+        )
+        ecoStops.forEach((s) =>
+          marker(s.lon, s.lat, s.id, {
+            parent: L.eco,
+            title: s.name,
+            color: '#bd5d7e',
+            onclick: () => ecoPopup(s),
+            r: 13,
+            fontsize: 9,
+            label: false
+          })
+        )
+        marker(ecoStart.lon, ecoStart.lat, 'Н', {
+          parent: L.eco,
+          title: 'Старт экотропы',
+          color: '#bd5d7e',
+          label: true,
+          onclick: () => ecoEndpointPopup('start')
+        })
+        marker(ecoFinish.lon, ecoFinish.lat, 'Ф', {
+          parent: L.eco,
+          title: 'Финиш экотропы',
+          color: '#bd5d7e',
+          label: true,
+          onclick: () => ecoEndpointPopup('finish')
+        })
+        marker(polarWhale.lon, polarWhale.lat, 'Р', {
+          title: 'Полярный кит',
+          color: '#ab7d44',
+          onclick: showPolar
+        })
+        pts.forEach((q) =>
+          marker(q.lon, q.lat, q.id, {
+            title: q.short,
+            dx: 12,
+            dy: 14,
+            r: 10,
+            color: q.category === 'main' ? '#103a5d' : '#628ca6',
+            onclick: () => focusPoint(q),
+            label: true
+          })
+        )
+        text('ЛОДЕЙНОЕ', 35.114, 69.195, 'offline-title', L.points, 5, -15)
+        text(
+          'СТАРАЯ ТЕРИБЕРКА',
+          35.145,
+          69.1607,
+          'offline-title',
+          L.points,
+          -60,
+          30
+        )
+        text(
+          'ПРИРОДНЫЙ ПАРК',
+          35.075,
+          69.205,
+          'offline-title',
+          L.points,
+          -70,
+          18
+        )
+        const bg = add(
+          'rect',
+          {
+            x: -2500,
+            y: -2500,
+            width: 5000,
+            height: 5000,
+            fill: 'none',
+            stroke: 'none'
+          },
+          svg
+        )
+        bg.setAttribute('pointer-events', 'none')
+        window.offlineReset()
+        document.getElementById('status').textContent =
+          'Резервная координатная схема · без картографической подложки'
+        document.getElementById('offlinePlus').onclick = () => {
+          vb = [
+            vb[0] + vb[2] * 0.15,
+            vb[1] + vb[3] * 0.15,
+            vb[2] * 0.7,
+            vb[3] * 0.7
+          ]
+          setVB()
+        }
+        document.getElementById('offlineMinus').onclick = () => {
+          vb = [
+            vb[0] - vb[2] * 0.18,
+            vb[1] - vb[3] * 0.18,
+            vb[2] * 1.36,
+            vb[3] * 1.36
+          ]
+          setVB()
+        }
+        document.getElementById('offlineReset').onclick = window.offlineReset
+        svg.addEventListener(
+          'wheel',
+          (e) => {
+            e.preventDefault()
+            const k = e.deltaY > 0 ? 1.17 : 0.85
+            let bx = vb[0] + vb[2] / 2,
+              by = vb[1] + vb[3] / 2
+            vb = [
+              bx - (vb[2] * k) / 2,
+              by - (vb[3] * k) / 2,
+              vb[2] * k,
+              vb[3] * k
+            ]
+            setVB()
+          },
+          { passive: false }
+        )
+        let prev = null
+        svg.addEventListener('pointerdown', (e) => {
+          if (e.target.closest('.offline-pin')) return
+          prev = [e.clientX, e.clientY]
+          svg.setPointerCapture(e.pointerId)
+        })
+        svg.addEventListener('pointermove', (e) => {
+          if (!prev) return
+          let sx = vb[2] / svg.getBoundingClientRect().width,
+            sy = vb[3] / svg.getBoundingClientRect().height
+          vb[0] -= (e.clientX - prev[0]) * sx
+          vb[1] -= (e.clientY - prev[1]) * sy
+          prev = [e.clientX, e.clientY]
+          setVB()
+        })
+        svg.addEventListener('pointerup', () => (prev = null))
+        // Render existing menus even without MapLibre's map load event.
+        setupFestivalSidebar()
+        setupEcoSidebar()
+        document.getElementById('festivalFocus').onclick = () =>
+          offlineSetRegion(35.125, 69.16, 35.165, 69.173)
+        document.getElementById('festivalToggle').onchange = (e) => {
+          L.territories.style.display = L.festival.style.display = e.target
+            .checked
+            ? ''
+            : 'none'
+        }
+        document.getElementById('ecoToggle').onchange = (e) =>
+          (L.eco.style.display = e.target.checked ? '' : 'none')
+        document.getElementById('parkToggle').onclick = () => {
+          let hidden = L.park.style.display !== 'none'
+          L.park.style.display = hidden ? 'none' : ''
+          document.getElementById('parkToggle').textContent = hidden
+            ? 'Показать границы парка'
+            : 'Скрыть границы парка'
+        }
+        document.getElementById('parkZoom').onclick = () =>
+          offlineSetRegion(34.99, 69.109, 35.214, 69.223)
+        // Load libraries without blocking the HTML parser. The reserve map works immediately.
+        const styles = document.createElement('link')
+        styles.rel = 'stylesheet'
+        styles.href = 'https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css'
+        document.head.appendChild(styles)
+        function loadScript(url, timeout = 8000) {
+          return new Promise((resolve, reject) => {
+            const s = document.createElement('script'),
+              t = setTimeout(() => {
+                s.remove()
+                reject(Error('timeout'))
+              }, timeout)
+            s.src = url
+            s.async = true
+            s.onload = () => {
+              clearTimeout(t)
+              resolve()
+            }
+            s.onerror = () => {
+              clearTimeout(t)
+              reject(Error('unavailable'))
+            }
+            document.head.appendChild(s)
+          })
+        }
+        Promise.any([
+          loadScript(
+            'https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.js',
+            9500
+          ),
+          loadScript(
+            'https://cdn.jsdelivr.net/npm/maplibre-gl@5.9.0/dist/maplibre-gl.js',
+            9500
+          )
+        ])
+          .then(() => {
+            // Load PDF helper libraries only as optional dependencies, independent of map startup.
+            Promise.allSettled([
+              loadScript(
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+                7000
+              ),
+              loadScript(
+                'https://cdn.jsdelivr.net/npm/proj4@2.9.0/dist/proj4.js',
+                7000
+              )
+            ]).then(() => {
+              if (
+                window.onlineMapActive &&
+                window.pdfjsLib &&
+                window.proj4 &&
+                !parkExact
+              )
+                loadParkPdf(OFFICIAL_PDF, true)
+            })
+            startOnlineMap()
+          })
+          .catch(() => {
+            document.getElementById('error').style.display = 'block'
+          })
+      })()
+    </script>
+  </body>
+</html>
